@@ -1,8 +1,8 @@
 // POST /api/chat   { kidId, message }
-// 대화형 인테이크: 메시지에서 프로필 추출·저장 + 관련 지식(RAG) + 빈 정보 자연스럽게 수집
+// 대화형 인테이크 + 학교 매칭 + RAG + 빈 정보 자연 수집
 import { askClaude, getKbContext, getPrompt, MODELS, json } from "../../lib/claude.js";
 import { checkRateLimit, tooMany } from "../../lib/limits.js";
-import { extractProfile, intakeGuidance } from "../../lib/intake.js";
+import { extractProfile, matchSchool, intakeGuidance } from "../../lib/intake.js";
 
 const SYSTEM_FALLBACK = `당신은 "대치파파"입니다. 대입 수시를 분석하는 도우미입니다.
 원칙: 합격을 보장하거나 예측하지 않습니다. "참고용 분석"임을 전제합니다.
@@ -21,12 +21,24 @@ export async function onRequestPost({ request, env }) {
     const kid = await env.DB.prepare("SELECT * FROM kids WHERE id = ?").bind(kidId).first();
     if (!kid) return json({ error: "아이를 찾을 수 없음" }, 404);
 
-    // 1) 메시지에서 구조화 프로필 추출 → 병합 (대화형 인테이크)
+    // 1) 구조화 프로필 추출
     let profile = {};
     try { profile = kid.profile ? JSON.parse(kid.profile) : {}; } catch { profile = {}; }
     const updated = await extractProfile(env, profile, message);
 
-    // 2) 히스토리 (created_at ms 정렬, user부터 시작 보장)
+    // 2) 학교명 → 정확한 학교 매칭
+    if (updated.school && updated.school !== profile.school) {
+      const m = await matchSchool(env, updated.school);
+      if (m) {
+        updated.school_matched = m.name;
+        updated.school_code = m.code;
+        kid.school = m.name;                 // RAG가 사용할 정식 학교명
+      }
+    } else if (updated.school_matched) {
+      kid.school = updated.school_matched;
+    }
+
+    // 3) 히스토리
     const hist = await env.DB.prepare(
       "SELECT role, content FROM chats WHERE kid_id = ? ORDER BY created_at DESC, id DESC LIMIT 12"
     ).bind(kidId).all();
@@ -34,7 +46,7 @@ export async function onRequestPost({ request, env }) {
       .map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content }));
     while (history.length && history[0].role !== "user") history.shift();
 
-    // 3) RAG + 인테이크 가이드
+    // 4) RAG (이제 정식 학교명으로 학교 데이터 매칭) + 인테이크 가이드
     const kb = await getKbContext(env, kid, message);
     const base = { label: kid.label, school: kid.school, grade: kid.grade, track: kid.track };
     const system = (await getPrompt(env, "chat", SYSTEM_FALLBACK)) +
@@ -45,18 +57,18 @@ export async function onRequestPost({ request, env }) {
     const messages = [...history, { role: "user", content: message }];
     const answer = await askClaude(env, { model: MODELS.chat, system, messages, max_tokens: 1500 });
 
-    // 4) 저장: 대화 + 갱신된 프로필
+    // 5) 저장: 대화 + 프로필 + 정식 학교명
     const now = Date.now();
     await env.DB.batch([
       env.DB.prepare("INSERT INTO chats (id,kid_id,role,content,created_at) VALUES (?,?,?,?,?)")
         .bind("c_" + now + "_u", kidId, "user", message, now),
       env.DB.prepare("INSERT INTO chats (id,kid_id,role,content,created_at) VALUES (?,?,?,?,?)")
         .bind("c_" + now + "_a", kidId, "assistant", answer, now + 1),
-      env.DB.prepare("UPDATE kids SET profile = ? WHERE id = ?")
-        .bind(JSON.stringify(updated), kidId)
+      env.DB.prepare("UPDATE kids SET profile = ?, school = ? WHERE id = ?")
+        .bind(JSON.stringify(updated), kid.school || null, kidId)
     ]);
 
-    return json({ answer, profile: updated });
+    return json({ answer, profile: updated, school_matched: updated.school_matched || null });
   } catch (e) {
     return json({ error: String(e.message || e) }, 500);
   }
