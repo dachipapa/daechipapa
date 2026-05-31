@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>대치파파 — 내부 도구 (Studio · Admin)</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.min.css"/>
+<style>
+  :root{
+    --blue:#183367;--blue2:#27498a;--ink:#14203a;--sub:#46506a;--gray:#6b7488;
+    --solar:#e0922f;--solar-d:#b9741b;--solarbg:#fdf3e3;
+    --bg:#eceef3;--panel:#fff;--panel2:#f6f7fa;--line:#e2e5ec;--line2:#eef0f4;
+    --ok:#1d7a4b;--okbg:#e9f6ee;--warn:#c0402f;--warnbg:#fcecea;--draft:#b9741b;--draftbg:#fbf1df;
+    --r:12px;--sh:0 1px 2px rgba(20,32,58,.06),0 8px 24px -16px rgba(20,32,58,.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--ink);letter-spacing:-.012em;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+  /* top bar */
+  .top{height:56px;flex:0 0 auto;background:var(--blue);display:flex;align-items:center;padding:0 18px;gap:14px;color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.1)}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15.5px;letter-spacing:-.02em}
+  .brand svg{width:30px;height:25px}
+  .brand .tag{font-size:10px;font-weight:700;color:#9db0d4;background:rgba(255,255,255,.1);padding:2px 8px;border-radius:6px;letter-spacing:.04em}
+  .toggle{display:flex;background:rgba(255,255,255,.1);border-radius:9px;padding:3px;margin-left:6px}
+  .toggle button{border:none;background:transparent;color:#cdd7ea;font:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:7px;cursor:pointer;transition:.15s}
+  .toggle button.on{background:#fff;color:var(--blue)}
+  .top .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:12.5px;color:#aebbd6}
+  .who{display:flex;align-items:center;gap:8px;font-weight:600;color:#e7ecf6}
+  .who .av{width:26px;height:26px;border-radius:50%;background:var(--solar);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800}
+  .lock{display:flex;align-items:center;gap:5px;font-size:11px;color:#9db0d4}
+
+  /* shell */
+  .shell{flex:1;display:flex;min-height:0}
+  .side{flex:0 0 212px;background:var(--panel);border-right:1px solid var(--line);padding:16px 12px;overflow-y:auto}
+  .side .grp{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--gray);text-transform:uppercase;padding:6px 10px;margin-top:6px}
+  .nav button{width:100%;display:flex;align-items:center;gap:10px;border:none;background:transparent;font:inherit;font-size:13.5px;font-weight:600;color:var(--sub);padding:9px 10px;border-radius:9px;cursor:pointer;text-align:left;transition:.12s;margin-bottom:1px}
+  .nav button:hover{background:var(--panel2)}
+  .nav button.on{background:#eaf0fb;color:var(--blue);font-weight:700}
+  .nav button .ic{width:17px;height:17px;flex:0 0 auto;color:currentColor;opacity:.85}
+  .nav button .badge{margin-left:auto;font-size:10.5px;font-weight:800;background:var(--solar);color:#fff;border-radius:999px;padding:1px 7px}
+
+  .main{flex:1;overflow-y:auto;padding:26px 30px 60px}
+  .sec{display:none;animation:fade .25s ease}
+  .sec.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .h{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;gap:16px;flex-wrap:wrap}
+  .h h1{font-size:23px;font-weight:800;color:var(--blue);letter-spacing:-.03em}
+  .h p{font-size:13px;color:var(--gray);margin-top:3px}
+  .btn{border:none;border-radius:9px;font:inherit;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+  .btn.pri{background:var(--solar);color:#fff}.btn.pri:hover{background:var(--solar-d)}
+  .btn.sec{background:#fff;color:var(--blue);border:1px solid var(--line)}.btn.sec:hover{border-color:#c7cedd}
+  .btn.gho{background:transparent;color:var(--gray);padding:6px 10px}.btn.gho:hover{color:var(--blue)}
+  .btn.sm{padding:5px 11px;font-size:12px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+  .card.pad{padding:20px 22px}
+  .grid{display:grid;gap:16px}
+  .cards4{grid-template-columns:repeat(4,1fr)}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  /* metric */
+  .metric{padding:16px 18px}
+  .metric .lab{font-size:12px;color:var(--gray);font-weight:600}
+  .metric .val{font-size:27px;font-weight:800;color:var(--blue);letter-spacing:-.03em;margin-top:5px;line-height:1}
+  .metric .delta{font-size:11.5px;font-weight:700;margin-top:6px}
+  .metric .delta.up{color:var(--ok)}.metric .delta.flag{color:var(--warn)}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--gray);text-transform:uppercase;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--line2);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafbfd}
+  td .nm{font-weight:700;color:var(--ink)}
+  td .mut{color:var(--gray);font-size:12px}
+  .tablecard{overflow:hidden}
+
+  /* badges */
+  .bdg{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.01em}
+  .bdg.live{background:var(--okbg);color:var(--ok)}
+  .bdg.draft{background:var(--draftbg);color:var(--draft)}
+  .bdg.flag{background:var(--warnbg);color:var(--warn)}
+  .bdg.auto{background:#eaf0fb;color:var(--blue)}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+  .tabs{display:flex;gap:4px;background:var(--panel2);padding:4px;border-radius:10px;width:fit-content;margin-bottom:16px}
+  .tabs button{border:none;background:transparent;font:inherit;font-size:12.5px;font-weight:700;color:var(--gray);padding:7px 15px;border-radius:7px;cursor:pointer}
+  .tabs button.on{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.07)}
+
+  .search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:13px;color:var(--gray);width:280px}
+  .search input{border:none;outline:none;font:inherit;flex:1;color:var(--ink)}
+  .dz{border:2px dashed #c2cce0;border-radius:14px;background:#fbfcfe;padding:36px 24px;text-align:center;cursor:pointer;transition:.18s;display:flex;flex-direction:column;align-items:center}
+  .dz:hover{border-color:var(--solar);background:var(--solarbg)}
+  .dz.over{border-color:var(--solar);background:var(--solarbg);box-shadow:0 8px 30px -12px rgba(224,146,47,.5)}
+  .dz svg{width:42px;height:42px;color:var(--solar);margin-bottom:11px}
+  .dz-t{font-size:16.5px;font-weight:800;color:var(--blue);letter-spacing:-.02em}
+  .dz-s{font-size:12.5px;color:var(--gray);margin-top:6px}
+  .dz-or{font-size:12.5px;color:var(--gray);margin-top:13px}
+  .dz .lnk{color:var(--solar-d);font-weight:700;text-decoration:underline}
+
+  /* desk (분석 작업대) */
+  .desk{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+  .pane .hd{padding:13px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .pane .hd b{font-size:13.5px;color:var(--blue)}
+  .pane .bd{padding:16px 18px}
+  .raw{font-size:13px;line-height:1.75;color:var(--sub);white-space:pre-wrap}
+  .ai-item{border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-bottom:11px;background:var(--panel2)}
+  .ai-item .row1{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .ai-item .kind{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#fff;padding:2px 8px;border-radius:6px}
+  .kind.fact{background:var(--blue2)}.kind.rule{background:var(--solar)}
+  .ai-item .txt{font-size:13px;color:var(--ink);line-height:1.6}
+  .ai-item .meta{font-size:11px;color:var(--gray);margin-top:6px}
+  .ai-item .acts{display:flex;gap:7px;margin-top:10px}
+  .warnline{display:flex;gap:8px;align-items:flex-start;background:var(--warnbg);border:1px solid #f3cfc9;border-radius:9px;padding:10px 13px;font-size:12.5px;color:var(--warn);margin-bottom:11px}
+
+  /* test console */
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:11.5px;font-weight:700;color:var(--sub);margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 12px;font:inherit;font-size:13px;color:var(--ink);outline:none;background:#fff}
+  .field input:focus,.field textarea:focus{border-color:var(--blue2)}
+  .answer{background:#0f1c33;color:#e8eefb;border-radius:12px;padding:18px 20px;font-size:13.5px;line-height:1.75}
+  .answer .who{color:var(--solar);font-weight:800;font-size:12px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .answer ul{margin:8px 0 0 2px}.answer li{padding:3px 0 3px 16px;position:relative;list-style:none}
+  .answer li::before{content:"";position:absolute;left:2px;top:11px;width:5px;height:5px;border-radius:50%;background:var(--solar)}
+  .cite{font-size:11px;color:#8fa3c9;margin-top:10px;border-top:1px solid rgba(255,255,255,.12);padding-top:9px}
+
+  .notice{display:flex;gap:11px;align-items:flex-start;background:var(--okbg);border:1px solid #c3e6d1;border-radius:11px;padding:13px 16px;margin-bottom:18px;font-size:13px;color:#1c5e3c}
+  .notice b{color:var(--ok)}
+  .bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:99px}
+  .kv{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-bottom:1px solid var(--line2)}
+  .kv:last-child{border:none}.kv b{color:var(--ink)}.kv .mut{color:var(--gray)}
+  .row-act{display:flex;gap:6px;justify-content:flex-end}
+  .feed{font-size:12px;color:var(--warn);font-weight:700;display:inline-flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand">
+    <svg viewBox="0 0 120 102"><use href="#car"/></svg>
+    대치파파 <span class="tag">내부 도구</span>
+  </div>
+  <div class="toggle">
+    <button id="mStudio" class="on" onclick="setMode('studio')">Studio</button>
+    <button id="mAdmin" onclick="setMode('admin')">Admin</button>
+  </div>
+  <div class="right">
+    <span class="lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>Cloudflare Access</span>
+    <span class="who"><span class="av">파</span>옆집아빠</span>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="side"><div class="nav" id="nav"></div></aside>
+  <main class="main" id="main"></main>
+</div>
+
+<!-- ============ STUDIO SECTIONS ============ -->
+<template id="t_s_inbox">
+  <div class="h">
+    <div><h1>입력함</h1><p>구해온 자료를 끌어다 놓으면 AI가 함께 구조화합니다</p></div>
+  </div>
+  <div class="dz" id="dz" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)" onclick="document.getElementById('dzFile').click()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A5 5 0 008 21h9a5 5 0 001.9-9.6A6 6 0 006 9.4"/><path d="M12 19v-8m0 0 3.5 3.5M12 11l-3.5 3.5"/></svg>
+    <div class="dz-t">자료를 여기로 끌어다 놓으세요</div>
+    <div class="dz-s">요강 PDF · 캡처 이미지 · 한글/워드 · 메모</div>
+    <div class="dz-or">또는 <span class="lnk">클릭해 찾아보기</span></div>
+    <input type="file" id="dzFile" multiple style="display:none" onchange="dzFiles(this.files)"/>
+  </div>
+  <div class="card tablecard" style="margin-top:16px">
+    <table>
+      <thead><tr><th>원자료</th><th>종류</th><th>상태</th><th>날짜</th><th></th></tr></thead>
+      <tbody id="inboxBody">
+        <tr><td><div class="nm">중앙대 다빈치형인재 2026 요강 발췌</div><div class="mut">서류 100%, 수능최저 없음…</div></td><td><span class="bdg auto">요강</span></td><td><span class="bdg draft">미처리</span></td><td class="mut">오늘</td><td class="row-act"><button class="btn sec sm" onclick="setMode('studio');show('s_desk')">분석</button></td></tr>
+        <tr><td><div class="nm">대치 A고 2025 성취도 분포 관찰</div><div class="mut">국·수·영 A등급 비율 높음, 내신 변별…</div></td><td><span class="bdg auto">학교관찰</span></td><td><span class="bdg draft">미처리</span></td><td class="mut">어제</td><td class="row-act"><button class="btn sec sm" onclick="setMode('studio');show('s_desk')">분석</button></td></tr>
+        <tr><td><div class="nm">의약학 정시 이월 경향 메모(카페)</div><div class="mut">올해 수시 이월 증가 체감…</div></td><td><span class="bdg auto">카페경향</span></td><td><span class="bdg live">구조화됨</span></td><td class="mut">3일 전</td><td class="row-act"><button class="btn gho sm">보기</button></td></tr>
+        <tr><td><div class="nm">내 해석: 내신-모평 갭 클 때 정시 기질</div><div class="mut">갭 1등급↑ + 모평 우위 → 정시 비중…</div></td><td><span class="bdg auto">내해석</span></td><td><span class="bdg live">반영됨</span></td><td class="mut">1주 전</td><td class="row-act"><button class="btn gho sm">보기</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="t_s_desk">
+  <div class="h">
+    <div><h1>분석 작업대</h1><p>원자료를 AI와 함께 사실/규칙으로 분리하고 구조화합니다</p></div>
+    <button class="btn pri">⟳ AI 다시 분석</button>
+  </div>
+  <div class="desk">
+    <div class="pane">
+      <div class="hd"><b>원문 — 중앙대 다빈치형인재 2026</b><span class="bdg auto">요강</span></div>
+      <div class="bd"><div class="raw">[중앙대학교 2026 다빈치형인재전형]
+· 모집인원: 인문/자연 통합 약 OOO명
+· 전형방법: 서류종합평가 100%
+· 수능최저학력기준: 없음
+· 제출서류: 학생부
+· 면접: 미실시
+· 평가요소: 학업역량 / 진로역량 / 공동체역량
+
+(출처: 중앙대 입학처 모집요강 PDF, 직접 확보)</div></div>
+    </div>
+    <div class="pane">
+      <div class="hd"><b>AI 구조화 초안 — 검토 후 승인</b><span class="mut" style="font-size:11px">사실 2 · 규칙 1</span></div>
+      <div class="bd">
+        <div class="warnline"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L14.7 3.9a2 2 0 00-3.4 0z"/></svg><div>기존 지식과 <b>충돌 가능</b>: "중앙대 수능최저 있음(2024)" 항목이 live 상태입니다. 연도 갱신 검토 필요.</div></div>
+
+        <div class="ai-item">
+          <div class="row1"><span class="kind fact">사실</span><span class="meta">→ universities · 중앙대 · 2026</span></div>
+          <div class="txt">다빈치형인재전형 = <b>서류 100%, 수능최저 없음, 면접 미실시</b>.</div>
+          <div class="acts"><button class="btn pri sm">승인</button><button class="btn sec sm">수정</button><button class="btn gho sm">버림</button></div>
+        </div>
+
+        <div class="ai-item">
+          <div class="row1"><span class="kind fact">사실</span><span class="meta">→ programs · 평가요소</span></div>
+          <div class="txt">평가요소 = 학업역량 / 진로역량 / 공동체역량.</div>
+          <div class="acts"><button class="btn pri sm">승인</button><button class="btn sec sm">수정</button><button class="btn gho sm">버림</button></div>
+        </div>
+
+        <div class="ai-item">
+          <div class="row1"><span class="kind rule">해석 규칙</span><span class="meta">→ rules · 전형 적합성</span></div>
+          <div class="txt">수능최저 없는 서류형은 <b>내신 안정 + 생기부 충실</b>한 학생에게 유리. 모평이 약해도 도전 가능.</div>
+          <div class="meta">신뢰도: 높음 · 출처: 본 요강 + 평가자 해석</div>
+          <div class="acts"><button class="btn pri sm">승인</button><button class="btn sec sm">수정</button><button class="btn gho sm">버림</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="t_s_kb">
+  <div class="h">
+    <div><h1>지식 베이스</h1><p>대치파파가 RAG로 꺼내 쓰는 지식 · live만 실서비스에 반영</p></div>
+    <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="지식 검색 (학교·대학·규칙)"/></div>
+  </div>
+  <div class="tabs"><button class="on">해석 규칙</button><button>사실(학교/대학)</button><button>프롬프트</button></div>
+  <div class="card tablecard">
+    <table>
+      <thead><tr><th>규칙</th><th>분류</th><th>출처</th><th>상태</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><div class="nm">내신-모평 갭 1등급↑ + 모평 우위 → 정시 기질</div></td><td>전형 판단</td><td class="mut">내 해석</td><td><span class="bdg live"><span class="dot" style="background:var(--ok)"></span>live</span></td><td class="row-act"><button class="btn gho sm">편집</button><button class="btn gho sm">롤백</button></td></tr>
+        <tr><td><div class="nm">수능최저 없는 서류형 = 내신 안정+생기부 충실에 유리</div></td><td>전형 적합</td><td class="mut">중앙대 요강</td><td><span class="bdg draft"><span class="dot" style="background:var(--draft)"></span>draft</span></td><td class="row-act"><button class="btn pri sm">반영</button><button class="btn gho sm">편집</button></td></tr>
+        <tr><td><div class="nm">블라인드 평가로 출신고 후광 약화 → 생기부 내용 자체가 관건</div></td><td>평가 환경</td><td class="mut">제도 변화</td><td><span class="bdg live"><span class="dot" style="background:var(--ok)"></span>live</span></td><td class="row-act"><button class="btn gho sm">편집</button><button class="btn gho sm">롤백</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="t_s_test">
+  <div class="h"><div><h1>테스트 콘솔</h1><p>반영 전, 현재 지식(draft 포함)으로 대치파파가 어떻게 답하는지 미리 봅니다</p></div></div>
+  <div class="split">
+    <div class="card pad">
+      <div class="field"><label>가상 아이 — 학교 / 학년</label><input value="대치 일반고 2학년"/></div>
+      <div class="field"><label>내신 / 모평</label><input value="내신 2.3 / 모평 1.8 (수학 1, 영어 2)"/></div>
+      <div class="field"><label>목표</label><input value="인서울 상위 / 자연계열, 의약 도전 희망"/></div>
+      <div class="field"><label>비고(활동·강점)</label><textarea rows="2">생기부 탐구활동 충실, 면접 부담</textarea></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);font-weight:600;margin:6px 0 14px"><input type="checkbox" checked style="width:auto"/> draft 지식도 포함해서 테스트</label>
+      <button class="btn pri" style="width:100%">테스트 실행</button>
+    </div>
+    <div class="answer">
+      <div class="who"><svg width="18" height="15" viewBox="0 0 120 102"><use href="#car"/></svg>대치파파 (미리보기)</div>
+      <p>내신과 모평에 <b>갭이 있고 모평이 우위</b>라, 수시·정시를 함께 열어두는 게 맞아 보여요. 다만 모평 우위가 또렷해서 정시 기질도 있습니다.</p>
+      <ul>
+        <li>수시: 수능최저 부담이 적은 <b>서류형 종합</b>이 결을 살리기 좋아요(내신 안정 + 탐구활동 충실).</li>
+        <li>면접 부담을 고려하면 <b>면접 미실시 전형</b>부터 후보로.</li>
+        <li>정시: 모평 우위가 유지되면 정시 비중을 키우는 시나리오도 병행.</li>
+      </ul>
+      <div class="cite">근거: 「수능최저 없는 서류형…」(draft) · 「내신-모평 갭…」(live) · 중앙대 다빈치형(draft) — ※ 참고용 분석이며 합격을 보장하지 않습니다.</div>
+    </div>
+  </div>
+</template>
+
+<!-- ============ ADMIN SECTIONS ============ -->
+<template id="t_a_dash">
+  <div class="h"><div><h1>대시보드</h1><p>오늘 · 이번 주 운영 현황</p></div></div>
+  <div class="grid cards4" style="margin-bottom:18px">
+    <div class="card metric"><div class="lab">오늘 가입</div><div class="val">12</div><div class="delta up">▲ 추천 5</div></div>
+    <div class="card metric"><div class="lab">오늘 리포트 발행</div><div class="val">28</div><div class="delta up">자동 발행</div></div>
+    <div class="card metric"><div class="lab">오늘 매출</div><div class="val">₩1.84M</div><div class="delta up">▲ 22%</div></div>
+    <div class="card metric"><div class="lab">예외 플래그</div><div class="val">2</div><div class="delta flag">검토 권장</div></div>
+  </div>
+  <div class="split">
+    <div class="card pad">
+      <h3 style="margin-top:0;color:var(--blue)">알림</h3>
+      <div class="kv"><span class="feed">⚑ 저신뢰 리포트 2건</span><span class="mut">검토</span></div>
+      <div class="kv"><span style="color:var(--warn);font-weight:700">결제 실패 1건</span><span class="mut">확인</span></div>
+      <div class="kv"><span class="feed">👎 유저 피드백 3건</span><span class="mut">→ Studio</span></div>
+      <div class="kv"><span>초대 잔여 18석</span><span class="mut">소프트런치</span></div>
+    </div>
+    <div class="card pad">
+      <h3 style="margin-top:0;color:var(--blue)">이번 주 비용</h3>
+      <div class="kv"><span class="mut">Claude (Opus 리포트)</span><b>₩61,400</b></div>
+      <div class="kv"><span class="mut">Claude (Sonnet 대화)</span><b>₩18,200</b></div>
+      <div class="kv"><span class="mut">Cloudflare</span><b>₩0 (무료 한도)</b></div>
+      <div class="kv"><span class="mut">토스 수수료</span><b>₩47,900</b></div>
+    </div>
+  </div>
+</template>
+
+<template id="t_a_reports">
+  <div class="h"><div><h1>리포트</h1><p>리포트는 자동 발행됩니다 · 여기선 모니터·예외검토·환불·피드백</p></div></div>
+  <div class="notice"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="flex:0 0 auto;color:var(--ok);margin-top:1px"><path d="M20 6 9 17l-5-5"/></svg><div><b>자동 발행 정책</b> — 전수 인간 검수 없이 즉시 발행됩니다. 품질 통제는 Studio(KB)에서 상류 관리하고, 여기선 저신뢰·이상치만 검토하고 환불·피드백을 처리합니다.</div></div>
+  <div class="card tablecard">
+    <table>
+      <thead><tr><th>리포트</th><th>아이</th><th>종류</th><th>발행</th><th>상태</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><div class="nm">#R-2041</div><div class="mut">큰그림 종합</div></td><td>윤서맘 · <span class="mut">큰애</span></td><td>큰그림</td><td class="mut">방금</td><td><span class="bdg auto"><span class="dot" style="background:var(--blue)"></span>자동 발행</span></td><td class="row-act"><button class="btn gho sm">보기</button><button class="btn sec sm">환불</button></td></tr>
+        <tr style="background:#fffaf7"><td><div class="nm">#R-2040</div><div class="mut">전형 진단</div></td><td>지호맘 · <span class="mut">둘째</span></td><td>단품</td><td class="mut">6분 전</td><td><span class="bdg flag"><span class="dot" style="background:var(--warn)"></span>저신뢰 ⚑</span></td><td class="row-act"><button class="btn pri sm">검토</button><button class="btn sec sm">환불</button></td></tr>
+        <tr><td><div class="nm">#R-2039</div><div class="mut">전형 지도</div></td><td>민준맘 · <span class="mut">큰애</span></td><td>단품</td><td class="mut">14분 전</td><td><span class="feed">👎 피드백</span></td><td class="row-act"><button class="btn sec sm">→ Studio</button><button class="btn sec sm">재발행</button></td></tr>
+        <tr><td><div class="nm">#R-2038</div><div class="mut">큰그림 종합</div></td><td>서연맘 · <span class="mut">큰애</span></td><td>큰그림</td><td class="mut">32분 전</td><td><span class="bdg auto"><span class="dot" style="background:var(--blue)"></span>자동 발행</span></td><td class="row-act"><button class="btn gho sm">보기</button><button class="btn sec sm">환불</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="t_a_users">
+  <div class="h"><div><h1>사용자</h1><p>부모 계정 · 아이 프로필(최대 3) · 개인정보 처리</p></div>
+    <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="부모·연락처 검색"/></div>
+  </div>
+  <div class="card tablecard">
+    <table>
+      <thead><tr><th>부모</th><th>아이</th><th>가입경로</th><th>상태</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><div class="nm">윤서맘</div><div class="mut">010-••••-1234</div></td><td>큰애, 둘째 <span class="mut">(2)</span></td><td><span class="bdg auto">추천</span></td><td><span class="bdg live">활성</span></td><td class="row-act"><button class="btn gho sm">상세</button></td></tr>
+        <tr><td><div class="nm">지호맘</div><div class="mut">010-••••-5678</div></td><td>둘째 <span class="mut">(1)</span></td><td><span class="bdg auto">카페</span></td><td><span class="bdg live">활성</span></td><td class="row-act"><button class="btn gho sm">상세</button></td></tr>
+        <tr><td><div class="nm">서연맘</div><div class="mut">삭제 요청 접수</div></td><td>큰애, 둘째, 셋째 <span class="mut">(3)</span></td><td><span class="bdg auto">인스타</span></td><td><span class="bdg flag">삭제 대기</span></td><td class="row-act"><button class="btn sec sm">개인정보 삭제</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="t_a_billing">
+  <div class="h"><div><h1>결제 · 크레딧</h1><p>토스 거래 · 환불 · 크레딧 수동 조정(추천 보너스 등)</p></div>
+    <button class="btn sec">+ 크레딧 지급</button>
+  </div>
+  <div class="card tablecard">
+    <table>
+      <thead><tr><th>거래</th><th>부모</th><th>수단</th><th>금액</th><th>상태</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><div class="nm">큰그림 종합</div><div class="mut">#R-2041</div></td><td>윤서맘</td><td><span class="bdg auto">카카오페이</span></td><td><b>₩79,000</b></td><td><span class="bdg live">완료</span></td><td class="row-act"><button class="btn sec sm">환불</button></td></tr>
+        <tr><td><div class="nm">대화 크레딧 충전</div></td><td>지호맘</td><td><span class="bdg auto">카드</span></td><td><b>₩4,900</b></td><td><span class="bdg live">완료</span></td><td class="row-act"><button class="btn gho sm">—</button></td></tr>
+        <tr><td><div class="nm">단품 진단</div></td><td>민준맘</td><td><span class="bdg auto">계좌이체</span></td><td><b>₩29,000</b></td><td><span class="bdg flag">실패</span></td><td class="row-act"><button class="btn sec sm">재시도 안내</button></td></tr>
+        <tr><td><div class="nm">추천 보너스</div></td><td>윤서맘</td><td><span class="bdg auto">크레딧</span></td><td><b>+₩5,000</b></td><td><span class="bdg live">지급</span></td><td class="row-act"><button class="btn gho sm">—</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="t_a_cost">
+  <div class="h"><div><h1>비용 · 모델 모니터</h1><p>모델 티어별 토큰·비용 · 프롬프트는 Studio에서 편집</p></div></div>
+  <div class="card pad" style="margin-bottom:16px">
+    <h3 style="margin-top:0;color:var(--blue)">이번 주 모델 사용</h3>
+    <div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span><b>Opus 4.8</b> <span class="mut">— 큰그림 리포트</span></span><b>₩61,400</b></div>
+      <div class="bar"><i style="width:62%;background:var(--blue)"></i></div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span><b>Sonnet 4.6</b> <span class="mut">— 대화·매니저</span></span><b>₩18,200</b></div>
+      <div class="bar"><i style="width:23%;background:var(--blue2)"></i></div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span><b>Haiku 4.5</b> <span class="mut">— 분류·추출</span></span><b>₩3,100</b></div>
+      <div class="bar"><i style="width:8%;background:var(--solar)"></i></div>
+    </div>
+  </div>
+  <div class="split">
+    <div class="card pad"><div class="kv"><span class="mut">프롬프트 캐시 적중률</span><b>87%</b></div><div class="kv"><span class="mut">캐시 절감</span><b style="color:var(--ok)">-₩39,200</b></div><div class="kv"><span class="mut">배치 처리 비중</span><b>0% (실시간 위주)</b></div></div>
+    <div class="card pad"><div class="kv"><span class="mut">리포트당 평균 변동비</span><b>₩2,560</b></div><div class="kv"><span class="mut">큰그림 변동 마진</span><b style="color:var(--ok)">≈ 97%</b></div><div class="kv"><span class="mut">현재 활성 프롬프트</span><b>report_v4 · chat_v3</b></div></div>
+  </div>
+</template>
+
+<template id="t_a_mkt">
+  <div class="h"><div><h1>마케팅</h1><p>초대코드 · 추천 · 희소성(소프트런치)</p></div><button class="btn pri">+ 초대코드 발급</button></div>
+  <div class="grid cards4" style="margin-bottom:18px">
+    <div class="card metric"><div class="lab">초대 잔여석</div><div class="val">18</div><div class="delta flag">/ 100</div></div>
+    <div class="card metric"><div class="lab">추천 전환</div><div class="val">41%</div><div class="delta up">▲ 높음</div></div>
+    <div class="card metric"><div class="lab">추천 보너스 지급</div><div class="val">₩235K</div><div class="delta up">47건</div></div>
+    <div class="card metric"><div class="lab">카페 유입</div><div class="val">63</div><div class="delta up">이번 주</div></div>
+  </div>
+  <div class="card tablecard">
+    <table>
+      <thead><tr><th>초대코드</th><th>발급처</th><th>사용</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td><div class="nm">DAECHI-MOM</div></td><td>대치맘 카페</td><td>23 / 30</td><td><span class="bdg live">활성</span></td></tr>
+        <tr><td><div class="nm">FIRST-50</div></td><td>소프트런치</td><td>50 / 50</td><td><span class="bdg draft">소진</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="t_a_settings">
+  <div class="h"><div><h1>설정</h1><p>가격 · 커버리지 · 약관 · 권한</p></div></div>
+  <div class="split">
+    <div class="card pad">
+      <h3 style="margin-top:0;color:var(--blue)">가격</h3>
+      <div class="kv"><span class="mut">대화 크레딧</span><b>₩4,900 부터</b></div>
+      <div class="kv"><span class="mut">단품</span><b>₩29,000</b></div>
+      <div class="kv"><span class="mut">큰그림 종합</span><b>₩79,000</b></div>
+      <div class="kv"><span class="mut">재발행</span><b>₩39,000</b></div>
+    </div>
+    <div class="card pad">
+      <h3 style="margin-top:0;color:var(--blue)">커버리지 · 운영</h3>
+      <div class="kv"><span class="mut">활성 대학군</span><b>의약·인서울 상위</b></div>
+      <div class="kv"><span class="mut">결제수단</span><b>카드·계좌·카카오·네이버</b></div>
+      <div class="kv"><span class="mut">시즌 모드</span><b>수시 (ON)</b></div>
+      <div class="kv"><span class="mut">접근</span><b>Cloudflare Access</b></div>
+    </div>
+  </div>
+</template>
+
+<!-- car symbol -->
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="car" viewBox="0 0 120 102">
+    <path d="M12 56 C12 46 20 42 30 42 L90 42 C100 42 108 46 108 56 C110 67 106 80 94 84 C80 88 40 88 26 84 C14 80 10 67 12 56 Z" fill="currentColor" opacity=".95"/>
+    <path d="M26 46 L34 18 Q36 14 42 14 L78 14 Q84 14 86 18 L94 46 Z" fill="currentColor" opacity=".95"/>
+    <path d="M35 44 L41 21 Q43 18 47 18 L73 18 Q77 18 79 21 L85 44 Z" fill="#dce6f7"/>
+    <ellipse cx="34" cy="60" rx="10" ry="7.5" fill="#dce6f7"/><ellipse cx="86" cy="60" rx="10" ry="7.5" fill="#dce6f7"/>
+    <circle cx="34" cy="60" r="3.4" fill="#183367"/><circle cx="86" cy="60" r="3.4" fill="#183367"/>
+    <path d="M42 75 Q60 85 78 75" fill="none" stroke="#e0922f" stroke-width="5" stroke-linecap="round"/>
+  </symbol>
+</defs></svg>
+
+<script>
+  var NAV={
+    studio:{label:'지식 작업실',items:[
+      ['s_inbox','입력함','M4 7h16M4 12h16M4 17h10'],
+      ['s_desk','분석 작업대','M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'],
+      ['s_kb','지식 베이스','M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z'],
+      ['s_test','테스트 콘솔','M9 18l6-6-6-6']
+    ]},
+    admin:{label:'운영',items:[
+      ['a_dash','대시보드','M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z'],
+      ['a_reports','리포트','M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6',2],
+      ['a_users','사용자','M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z'],
+      ['a_billing','결제 · 크레딧','M2 7h20v12H2zM2 11h20'],
+      ['a_cost','비용 · 모델','M3 3v18h18M7 14l3-3 3 3 5-6'],
+      ['a_mkt','마케팅','M3 11l18-5v12L3 14zM3 11v3'],
+      ['a_settings','설정','M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 2h-5l-.4 2.6a7 7 0 00-1.7 1l-2.3-1-2 3.4L3.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.6h5l.4-2.6a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z']
+    ]}
+  };
+  var mode='studio';
+  function icon(d,flag){return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="'+d+'"/></svg>';}
+  function renderNav(){
+    var n=NAV[mode],h='<div class="grp">'+n.label+'</div>';
+    n.items.forEach(function(it){
+      var badge=(it[0]==='a_reports')?'<span class="badge">2</span>':(it[0]==='s_inbox')?'<span class="badge">2</span>':'';
+      h+='<button id="b_'+it[0]+'" onclick="show(\''+it[0]+'\')">'+icon(it[2])+'<span>'+it[1]+'</span>'+badge+'</button>';
+    });
+    document.getElementById('nav').innerHTML=h;
+  }
+  function show(id){
+    var m=document.getElementById('main');
+    var tpl=document.getElementById('t_'+id);
+    m.innerHTML='<div class="sec on">'+tpl.innerHTML+'</div>';
+    document.querySelectorAll('.nav button').forEach(function(b){b.classList.remove('on');});
+    var bb=document.getElementById('b_'+id); if(bb)bb.classList.add('on');
+    m.scrollTop=0;
+  }
+  function dzOver(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.add('over');}
+  function dzLeave(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.remove('over');}
+  function dzDrop(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.remove('over');dzFiles(e.dataTransfer.files);}
+  function dzFiles(files){if(!files||!files.length)return;var tb=document.getElementById('inboxBody');if(!tb)return;for(var i=0;i<files.length;i++){var f=files[i];var kb=Math.max(1,Math.round((f.size||0)/1024));var row='<tr><td><div class="nm">'+f.name+'</div><div class="mut">방금 추가됨 · '+kb+'KB</div></td><td><span class="bdg auto">미분류</span></td><td><span class="bdg draft">미처리</span></td><td class="mut">방금</td><td class="row-act"><button class="btn sec sm" onclick="setMode(\'studio\');show(\'s_desk\')">분석</button></td></tr>';tb.insertAdjacentHTML('afterbegin',row);}}
+  function setMode(mo){
+    mode=mo;
+    document.getElementById('mStudio').classList.toggle('on',mo==='studio');
+    document.getElementById('mAdmin').classList.toggle('on',mo==='admin');
+    renderNav();
+    show(NAV[mode].items[0][0]);
+  }
+  setMode('studio');
+</script>
+</body>
+</html>
