@@ -108,3 +108,9 @@ CREATE TABLE IF NOT EXISTS raw_notes (
   id TEXT PRIMARY KEY, title TEXT, body TEXT, source TEXT, kind TEXT,
   status TEXT DEFAULT 'inbox', created_at INTEGER DEFAULT (unixepoch())
 );
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key          TEXT PRIMARY KEY,
+  count        INTEGER DEFAULT 0,
+  window_start INTEGER
+);

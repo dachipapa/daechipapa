@@ -2,8 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>대치파파 — 예측이 아니라, 분석입니다</title>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#183367"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="대치파파"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png"/>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.min.css"/>
 <style>
   :root{
@@ -165,6 +172,43 @@
     <span>서울대</span><span>·</span><span>연세대</span><span>·</span><span>고려대</span><span>·</span><span>KAIST</span><span>·</span><span>의예과</span><span>·</span><span>치의예</span><span>·</span><span>약학</span><span>·</span><span>성균관대</span><span>·</span><span>한양대</span><span>·</span><span>서강대</span><span>·</span><span>중앙대</span><span>·</span><span>경희대</span><span>·</span><span>이화여대</span><span>·</span><span>한국외대</span><span>·</span><span>서울시립대</span><span>·</span>
   </div>
 </div>
+
+<style>
+  .statsband{background:linear-gradient(180deg,#f6f9ff,#fff);border-top:1px solid #eef2f9;border-bottom:1px solid #eef2f9}
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
+  .statc{background:#fff;border:1px solid #e7edf7;border-radius:16px;padding:22px 12px;box-shadow:0 1px 3px rgba(24,51,103,.05)}
+  .statc .num{font-size:34px;font-weight:800;color:#183367;line-height:1.1;letter-spacing:-.02em}
+  .statc .lab{font-size:13px;color:#5b6b85;margin-top:6px;font-weight:600}
+  .statnote{font-size:12px;color:#8a94a6;margin-top:16px}
+  @media(max-width:640px){.statgrid{grid-template-columns:repeat(2,1fr)}.statc .num{font-size:28px}}
+</style>
+<section class="statsband">
+  <div class="wrap center">
+    <div class="eyebrow">공개 데이터 기반</div>
+    <h2 style="margin-bottom:6px">전국 입시 데이터를 수집·분석합니다</h2>
+    <p class="lead" style="margin-bottom:22px">학교알리미·대학알리미 등 <b>공개 데이터</b>를 모아, 평가자의 해석을 더합니다.</p>
+    <div class="statgrid">
+      <div class="statc"><div class="num" id="st_schools">—</div><div class="lab">전국 고등학교</div></div>
+      <div class="statc"><div class="num" id="st_unis">—</div><div class="lab">전국 대학</div></div>
+      <div class="statc"><div class="num" id="st_progs">—</div><div class="lab">학과</div></div>
+      <div class="statc"><div class="num" id="st_rules">—</div><div class="lab">분석 해석 규칙</div></div>
+    </div>
+    <p class="statnote">※ 공개 데이터를 지속 수집·갱신합니다. 합격을 예측·보장하지 않는 참고용 분석입니다.</p>
+  </div>
+</section>
+<script>
+  (function(){
+    function animate(el,target){if(!el)return;var d=1000,t0=null;function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/d,1);el.textContent=Math.floor(p*target).toLocaleString();if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
+    fetch('/api/stats').then(function(r){return r.json();}).then(function(d){
+      animate(document.getElementById('st_schools'),d.schools||0);
+      animate(document.getElementById('st_unis'),d.universities||0);
+      animate(document.getElementById('st_progs'),d.programs||0);
+      animate(document.getElementById('st_rules'),d.rules||0);
+    }).catch(function(){
+      ['st_schools','st_unis','st_progs','st_rules'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent='—';});
+    });
+  })();
+</script>
 
 <section id="how">
   <div class="wrap center">

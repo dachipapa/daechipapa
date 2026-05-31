@@ -20,9 +20,20 @@ export async function onRequest({ request, env }) {
   if (request.method === "DELETE") {
     const { parentId } = await request.json();
     if (!parentId) return j({ error: "parentId 필요" }, 400);
-    // CASCADE: kids, chats, schedules, reports, credits 모두 삭제 (FK CASCADE 설정됨)
-    await env.DB.prepare("DELETE FROM parents WHERE id=?").bind(parentId).run();
-    return j({ ok: true, deleted: parentId });
+    const kids = await env.DB.prepare("SELECT id FROM kids WHERE parent_id=?").bind(parentId).all();
+    const kidIds = (kids.results || []).map(k => k.id);
+    const stmts = [];
+    for (const kid of kidIds) {
+      stmts.push(env.DB.prepare("DELETE FROM chats WHERE kid_id=?").bind(kid));
+      stmts.push(env.DB.prepare("DELETE FROM schedules WHERE kid_id=?").bind(kid));
+      stmts.push(env.DB.prepare("DELETE FROM reports WHERE kid_id=?").bind(kid));
+    }
+    stmts.push(env.DB.prepare("DELETE FROM kids WHERE parent_id=?").bind(parentId));
+    stmts.push(env.DB.prepare("DELETE FROM credits WHERE parent_id=?").bind(parentId));
+    stmts.push(env.DB.prepare("DELETE FROM payments WHERE parent_id=?").bind(parentId));
+    stmts.push(env.DB.prepare("DELETE FROM parents WHERE id=?").bind(parentId));
+    await env.DB.batch(stmts);
+    return j({ ok: true, deleted: parentId, kids: kidIds.length });
   }
   return j({ error: "Method not allowed" }, 405);
 }

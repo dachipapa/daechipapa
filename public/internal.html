@@ -135,6 +135,9 @@
   .row-act{display:flex;gap:6px;justify-content:flex-end}
   .feed{font-size:12px;color:var(--warn);font-weight:700;display:inline-flex;align-items:center;gap:4px}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -160,233 +163,91 @@
 
 <!-- ============ STUDIO SECTIONS ============ -->
 <template id="t_s_inbox">
-  <div class="h">
-    <div><h1>입력함</h1><p>구해온 자료를 끌어다 놓으면 AI가 함께 구조화합니다</p></div>
+  <div class="h"><div><h1>입력함</h1><p>구해온 자료(요강·관찰·메모)를 넣으면 AI가 사실/규칙으로 구조화</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"><button class="btn sec sm" onclick="loadNotes()">불러오기</button></div>
+  <div class="card pad" style="margin-bottom:16px"><h3 style="margin-top:0;color:var(--blue)">새 원자료 추가</h3>
+    <div class="dz" id="dz" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)" onclick="document.getElementById('dzFile').click()" style="margin-bottom:12px;padding:24px">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue);opacity:.7"><path d="M4 14.9A5 5 0 008 21h9a5 5 0 001.9-9.6A6 6 0 006 9.4"/><path d="M12 19v-8m0 0 3.5 3.5M12 11l-3.5 3.5"/></svg>
+      <div class="dz-t" style="margin-top:8px;font-weight:700;color:var(--blue)">요강·메모 파일을 끌어다 놓으세요</div>
+      <div class="dz-s" style="font-size:12px;color:var(--gray);margin-top:3px">PDF · TXT · MD · CSV → 텍스트 자동 추출 (이미지는 직접 입력)</div>
+      <input type="file" id="dzFile" accept=".pdf,.txt,.md,.csv" style="display:none" onchange="dzFiles(this.files)"/>
+    </div>
+    <input id="noteTitle" placeholder="제목 (예: 중앙대 다빈치 2026 요강)" style="width:100%;font:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px">
+    <textarea id="noteBody" placeholder="원문/메모를 붙여넣거나, 위에 파일을 끌어다 놓으면 자동으로 채워집니다" rows="5" style="width:100%;font:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px"><input id="noteSource" placeholder="출처" style="font:inherit;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;flex:1"><select id="noteKind" style="font:inherit;font-size:12.5px;padding:7px;border:1px solid var(--line);border-radius:8px"><option>요강</option><option>학교관찰</option><option>카페경향</option><option>내해석</option><option>기타</option></select><button class="btn pri sm" onclick="addNote()">추가</button></div>
   </div>
-  <div class="dz" id="dz" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)" onclick="document.getElementById('dzFile').click()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A5 5 0 008 21h9a5 5 0 001.9-9.6A6 6 0 006 9.4"/><path d="M12 19v-8m0 0 3.5 3.5M12 11l-3.5 3.5"/></svg>
-    <div class="dz-t">자료를 여기로 끌어다 놓으세요</div>
-    <div class="dz-s">요강 PDF · 캡처 이미지 · 한글/워드 · 메모</div>
-    <div class="dz-or">또는 <span class="lnk">클릭해 찾아보기</span></div>
-    <input type="file" id="dzFile" multiple style="display:none" onchange="dzFiles(this.files)"/>
-  </div>
-  <div class="card tablecard" style="margin-top:16px">
-    <table>
-      <thead><tr><th>원자료</th><th>종류</th><th>상태</th><th>날짜</th><th></th></tr></thead>
-      <tbody id="inboxBody">
-        <tr><td><div class="nm">중앙대 다빈치형인재 2026 요강 발췌</div><div class="mut">서류 100%, 수능최저 없음…</div></td><td><span class="bdg auto">요강</span></td><td><span class="bdg draft">미처리</span></td><td class="mut">오늘</td><td class="row-act"><button class="btn sec sm" onclick="setMode('studio');show('s_desk')">분석</button></td></tr>
-        <tr><td><div class="nm">대치 A고 2025 성취도 분포 관찰</div><div class="mut">국·수·영 A등급 비율 높음, 내신 변별…</div></td><td><span class="bdg auto">학교관찰</span></td><td><span class="bdg draft">미처리</span></td><td class="mut">어제</td><td class="row-act"><button class="btn sec sm" onclick="setMode('studio');show('s_desk')">분석</button></td></tr>
-        <tr><td><div class="nm">의약학 정시 이월 경향 메모(카페)</div><div class="mut">올해 수시 이월 증가 체감…</div></td><td><span class="bdg auto">카페경향</span></td><td><span class="bdg live">구조화됨</span></td><td class="mut">3일 전</td><td class="row-act"><button class="btn gho sm">보기</button></td></tr>
-        <tr><td><div class="nm">내 해석: 내신-모평 갭 클 때 정시 기질</div><div class="mut">갭 1등급↑ + 모평 우위 → 정시 비중…</div></td><td><span class="bdg auto">내해석</span></td><td><span class="bdg live">반영됨</span></td><td class="mut">1주 전</td><td class="row-act"><button class="btn gho sm">보기</button></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="card tablecard"><table><thead><tr><th>원자료</th><th>종류</th><th>상태</th><th>날짜</th><th></th></tr></thead><tbody id="inboxBody"><tr><td colspan="5" class="mut" style="padding:16px">관리자 키 입력 후 불러오기.</td></tr></tbody></table></div>
 </template>
 
 <template id="t_s_desk">
-  <div class="h">
-    <div><h1>분석 작업대</h1><p>원자료를 AI와 함께 사실/규칙으로 분리하고 구조화합니다</p></div>
-    <button class="btn pri">⟳ AI 다시 분석</button>
-  </div>
-  <div class="desk">
-    <div class="pane">
-      <div class="hd"><b>원문 — 중앙대 다빈치형인재 2026</b><span class="bdg auto">요강</span></div>
-      <div class="bd"><div class="raw">[중앙대학교 2026 다빈치형인재전형]
-· 모집인원: 인문/자연 통합 약 OOO명
-· 전형방법: 서류종합평가 100%
-· 수능최저학력기준: 없음
-· 제출서류: 학생부
-· 면접: 미실시
-· 평가요소: 학업역량 / 진로역량 / 공동체역량
-
-(출처: 중앙대 입학처 모집요강 PDF, 직접 확보)</div></div>
-    </div>
-    <div class="pane">
-      <div class="hd"><b>AI 구조화 초안 — 검토 후 승인</b><span class="mut" style="font-size:11px">사실 2 · 규칙 1</span></div>
-      <div class="bd">
-        <div class="warnline"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L14.7 3.9a2 2 0 00-3.4 0z"/></svg><div>기존 지식과 <b>충돌 가능</b>: "중앙대 수능최저 있음(2024)" 항목이 live 상태입니다. 연도 갱신 검토 필요.</div></div>
-
-        <div class="ai-item">
-          <div class="row1"><span class="kind fact">사실</span><span class="meta">→ universities · 중앙대 · 2026</span></div>
-          <div class="txt">다빈치형인재전형 = <b>서류 100%, 수능최저 없음, 면접 미실시</b>.</div>
-          <div class="acts"><button class="btn pri sm">승인</button><button class="btn sec sm">수정</button><button class="btn gho sm">버림</button></div>
-        </div>
-
-        <div class="ai-item">
-          <div class="row1"><span class="kind fact">사실</span><span class="meta">→ programs · 평가요소</span></div>
-          <div class="txt">평가요소 = 학업역량 / 진로역량 / 공동체역량.</div>
-          <div class="acts"><button class="btn pri sm">승인</button><button class="btn sec sm">수정</button><button class="btn gho sm">버림</button></div>
-        </div>
-
-        <div class="ai-item">
-          <div class="row1"><span class="kind rule">해석 규칙</span><span class="meta">→ rules · 전형 적합성</span></div>
-          <div class="txt">수능최저 없는 서류형은 <b>내신 안정 + 생기부 충실</b>한 학생에게 유리. 모평이 약해도 도전 가능.</div>
-          <div class="meta">신뢰도: 높음 · 출처: 본 요강 + 평가자 해석</div>
-          <div class="acts"><button class="btn pri sm">승인</button><button class="btn sec sm">수정</button><button class="btn gho sm">버림</button></div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="h"><div><h1>분석 작업대</h1><p>원자료를 AI(Haiku)로 사실/규칙 초안 분리 → 검토 후 규칙 승인(live)</p></div></div>
+  <div class="desk"><div class="pane"><div class="hd"><b id="deskNoteTitle">원문</b><span class="bdg auto" id="deskNoteKind">-</span></div><div class="bd"><div class="raw" id="deskRaw">입력함에서 원자료의 "분석"을 누르면 여기 표시됩니다.</div></div></div>
+  <div class="pane"><div class="hd"><b>AI 구조화 초안</b><button class="btn pri sm" id="deskAnalyzeBtn" onclick="analyzeNote()" disabled>⟳ AI 분석</button></div><div class="bd" id="deskDraft"><p class="mut" style="font-size:13px">원자료를 선택하세요.</p></div></div></div>
 </template>
 
 <template id="t_s_kb">
-  <div class="h">
-    <div><h1>지식 베이스</h1><p>대치파파가 RAG로 꺼내 쓰는 지식 · live만 실서비스에 반영</p></div>
-    <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="지식 검색 (학교·대학·규칙)"/></div>
-  </div>
-  <div class="tabs"><button class="on">해석 규칙</button><button>사실(학교/대학)</button><button>프롬프트</button></div>
-  <div class="card tablecard">
-    <table>
-      <thead><tr><th>규칙</th><th>분류</th><th>출처</th><th>상태</th><th></th></tr></thead>
-      <tbody>
-        <tr><td><div class="nm">내신-모평 갭 1등급↑ + 모평 우위 → 정시 기질</div></td><td>전형 판단</td><td class="mut">내 해석</td><td><span class="bdg live"><span class="dot" style="background:var(--ok)"></span>live</span></td><td class="row-act"><button class="btn gho sm">편집</button><button class="btn gho sm">롤백</button></td></tr>
-        <tr><td><div class="nm">수능최저 없는 서류형 = 내신 안정+생기부 충실에 유리</div></td><td>전형 적합</td><td class="mut">중앙대 요강</td><td><span class="bdg draft"><span class="dot" style="background:var(--draft)"></span>draft</span></td><td class="row-act"><button class="btn pri sm">반영</button><button class="btn gho sm">편집</button></td></tr>
-        <tr><td><div class="nm">블라인드 평가로 출신고 후광 약화 → 생기부 내용 자체가 관건</div></td><td>평가 환경</td><td class="mut">제도 변화</td><td><span class="bdg live"><span class="dot" style="background:var(--ok)"></span>live</span></td><td class="row-act"><button class="btn gho sm">편집</button><button class="btn gho sm">롤백</button></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="h"><div><h1>지식 베이스</h1><p>대치파파가 RAG로 꺼내 쓰는 지식 · live만 실서비스 반영</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"><button class="btn sec sm" onclick="loadKb()">불러오기</button></div>
+  <div class="tabs"><button class="on" id="kbtab_rules" onclick="loadKb('rules')">해석 규칙</button><button id="kbtab_schools" onclick="loadKb('schools')">학교</button><button id="kbtab_programs" onclick="loadKb('programs')">학과(입결)</button></div>
+  <div class="card tablecard"><table>
+    <thead><tr><th>내용</th><th>분류/메타</th><th>상태</th><th></th></tr></thead>
+    <tbody id="kbRows"><tr><td colspan="4" class="mut" style="padding:16px">관리자 키 입력 후 불러오기.</td></tr></tbody>
+  </table></div>
 </template>
 
 <template id="t_s_test">
-  <div class="h"><div><h1>테스트 콘솔</h1><p>반영 전, 현재 지식(draft 포함)으로 대치파파가 어떻게 답하는지 미리 봅니다</p></div></div>
-  <div class="split">
-    <div class="card pad">
-      <div class="field"><label>가상 아이 — 학교 / 학년</label><input value="대치 일반고 2학년"/></div>
-      <div class="field"><label>내신 / 모평</label><input value="내신 2.3 / 모평 1.8 (수학 1, 영어 2)"/></div>
-      <div class="field"><label>목표</label><input value="인서울 상위 / 자연계열, 의약 도전 희망"/></div>
-      <div class="field"><label>비고(활동·강점)</label><textarea rows="2">생기부 탐구활동 충실, 면접 부담</textarea></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);font-weight:600;margin:6px 0 14px"><input type="checkbox" checked style="width:auto"/> draft 지식도 포함해서 테스트</label>
-      <button class="btn pri" style="width:100%">테스트 실행</button>
-    </div>
-    <div class="answer">
-      <div class="who"><svg width="18" height="15" viewBox="0 0 120 102"><use href="#car"/></svg>대치파파 (미리보기)</div>
-      <p>내신과 모평에 <b>갭이 있고 모평이 우위</b>라, 수시·정시를 함께 열어두는 게 맞아 보여요. 다만 모평 우위가 또렷해서 정시 기질도 있습니다.</p>
-      <ul>
-        <li>수시: 수능최저 부담이 적은 <b>서류형 종합</b>이 결을 살리기 좋아요(내신 안정 + 탐구활동 충실).</li>
-        <li>면접 부담을 고려하면 <b>면접 미실시 전형</b>부터 후보로.</li>
-        <li>정시: 모평 우위가 유지되면 정시 비중을 키우는 시나리오도 병행.</li>
-      </ul>
-      <div class="cite">근거: 「수능최저 없는 서류형…」(draft) · 「내신-모평 갭…」(live) · 중앙대 다빈치형(draft) — ※ 참고용 분석이며 합격을 보장하지 않습니다.</div>
-    </div>
-  </div>
+  <div class="h"><div><h1>테스트 콘솔</h1><p>draft 포함 KB로 대치파파가 어떻게 답하는지 미리보기</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"></div>
+  <div class="split"><div class="card pad"><h3 style="margin-top:0;color:var(--blue)">가상 아이 프로필</h3><textarea id="testProfile" rows="5" placeholder="예: 대치고 2학년, 내신 2.3 상승세, 모평 1.7(수학·과탐 강세), 자연, 컴퓨터공학 목표" style="width:100%;font:inherit;font-size:13px;padding:9px;border:1px solid var(--line);border-radius:8px;resize:vertical"></textarea><input id="testMsg" placeholder="질문 (기본: 수시·정시 방향 분석)" style="width:100%;font:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;margin-top:8px"><label style="display:flex;gap:6px;align-items:center;font-size:12.5px;margin-top:8px"><input type="checkbox" id="testDraft" checked>draft 규칙 포함</label><button class="btn pri" style="width:100%;margin-top:10px" onclick="runTest()">테스트 실행</button></div>
+  <div class="card pad"><h3 style="margin-top:0;color:var(--blue)">대치파파 응답</h3><div id="testOut" class="mut" style="font-size:13px;white-space:pre-wrap;line-height:1.6">실행하면 여기 표시됩니다.</div></div></div>
 </template>
 
 <!-- ============ ADMIN SECTIONS ============ -->
 <template id="t_a_dash">
-  <div class="h"><div><h1>대시보드</h1><p>오늘 · 이번 주 운영 현황</p></div></div>
+  <div class="h"><div><h1>대시보드</h1><p>실시간 운영 현황 (D1 집계)</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"><button class="btn sec sm" onclick="loadAdminDash()">불러오기</button><span class="mut" id="admDashMsg" style="font-size:12px"></span></div>
   <div class="grid cards4" style="margin-bottom:18px">
-    <div class="card metric"><div class="lab">오늘 가입</div><div class="val">12</div><div class="delta up">▲ 추천 5</div></div>
-    <div class="card metric"><div class="lab">오늘 리포트 발행</div><div class="val">28</div><div class="delta up">자동 발행</div></div>
-    <div class="card metric"><div class="lab">오늘 매출</div><div class="val">₩1.84M</div><div class="delta up">▲ 22%</div></div>
-    <div class="card metric"><div class="lab">예외 플래그</div><div class="val">2</div><div class="delta flag">검토 권장</div></div>
+    <div class="card metric"><div class="lab">총 가입(부모)</div><div class="val" id="ad_users">—</div><div class="delta">누적</div></div>
+    <div class="card metric"><div class="lab">총 리포트</div><div class="val" id="ad_reports">—</div><div class="delta up">발행</div></div>
+    <div class="card metric"><div class="lab">누적 매출</div><div class="val" id="ad_revenue">—</div><div class="delta up">결제완료</div></div>
+    <div class="card metric"><div class="lab">검토 필요</div><div class="val" id="ad_flagged">—</div><div class="delta flag">저신뢰 ⚑</div></div>
   </div>
-  <div class="split">
-    <div class="card pad">
-      <h3 style="margin-top:0;color:var(--blue)">알림</h3>
-      <div class="kv"><span class="feed">⚑ 저신뢰 리포트 2건</span><span class="mut">검토</span></div>
-      <div class="kv"><span style="color:var(--warn);font-weight:700">결제 실패 1건</span><span class="mut">확인</span></div>
-      <div class="kv"><span class="feed">👎 유저 피드백 3건</span><span class="mut">→ Studio</span></div>
-      <div class="kv"><span>초대 잔여 18석</span><span class="mut">소프트런치</span></div>
-    </div>
-    <div class="card pad">
-      <h3 style="margin-top:0;color:var(--blue)">이번 주 비용</h3>
-      <div class="kv"><span class="mut">Claude (Opus 리포트)</span><b>₩61,400</b></div>
-      <div class="kv"><span class="mut">Claude (Sonnet 대화)</span><b>₩18,200</b></div>
-      <div class="kv"><span class="mut">Cloudflare</span><b>₩0 (무료 한도)</b></div>
-      <div class="kv"><span class="mut">토스 수수료</span><b>₩47,900</b></div>
-    </div>
+  <div class="card pad">
+    <h3 style="margin-top:0;color:var(--blue)">바로가기</h3>
+    <div class="kv"><span class="feed">⚑ 저신뢰 리포트 검토</span><button class="btn sec sm" onclick="show('a_reports')">리포트 →</button></div>
+    <div class="kv"><span>사용자·개인정보(삭제) 처리</span><button class="btn sec sm" onclick="show('a_users')">사용자 →</button></div>
+    <div class="kv"><span>데이터 수집 현황</span><button class="btn sec sm" onclick="show('a_data')">데이터 →</button></div>
   </div>
 </template>
 
 <template id="t_a_reports">
-  <div class="h"><div><h1>리포트</h1><p>리포트는 자동 발행됩니다 · 여기선 모니터·예외검토·환불·피드백</p></div></div>
-  <div class="notice"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="flex:0 0 auto;color:var(--ok);margin-top:1px"><path d="M20 6 9 17l-5-5"/></svg><div><b>자동 발행 정책</b> — 전수 인간 검수 없이 즉시 발행됩니다. 품질 통제는 Studio(KB)에서 상류 관리하고, 여기선 저신뢰·이상치만 검토하고 환불·피드백을 처리합니다.</div></div>
-  <div class="card tablecard">
-    <table>
-      <thead><tr><th>리포트</th><th>아이</th><th>종류</th><th>발행</th><th>상태</th><th></th></tr></thead>
-      <tbody>
-        <tr><td><div class="nm">#R-2041</div><div class="mut">큰그림 종합</div></td><td>윤서맘 · <span class="mut">큰애</span></td><td>큰그림</td><td class="mut">방금</td><td><span class="bdg auto"><span class="dot" style="background:var(--blue)"></span>자동 발행</span></td><td class="row-act"><button class="btn gho sm">보기</button><button class="btn sec sm">환불</button></td></tr>
-        <tr style="background:#fffaf7"><td><div class="nm">#R-2040</div><div class="mut">전형 진단</div></td><td>지호맘 · <span class="mut">둘째</span></td><td>단품</td><td class="mut">6분 전</td><td><span class="bdg flag"><span class="dot" style="background:var(--warn)"></span>저신뢰 ⚑</span></td><td class="row-act"><button class="btn pri sm">검토</button><button class="btn sec sm">환불</button></td></tr>
-        <tr><td><div class="nm">#R-2039</div><div class="mut">전형 지도</div></td><td>민준맘 · <span class="mut">큰애</span></td><td>단품</td><td class="mut">14분 전</td><td><span class="feed">👎 피드백</span></td><td class="row-act"><button class="btn sec sm">→ Studio</button><button class="btn sec sm">재발행</button></td></tr>
-        <tr><td><div class="nm">#R-2038</div><div class="mut">큰그림 종합</div></td><td>서연맘 · <span class="mut">큰애</span></td><td>큰그림</td><td class="mut">32분 전</td><td><span class="bdg auto"><span class="dot" style="background:var(--blue)"></span>자동 발행</span></td><td class="row-act"><button class="btn gho sm">보기</button><button class="btn sec sm">환불</button></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="h"><div><h1>리포트</h1><p>자동 발행 모니터 · 저신뢰 검토 · 환불</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"><select id="admRepFilter" onchange="loadAdminReports()" style="font:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line);border-radius:8px"><option value="all">전체</option><option value="flagged">검토 필요</option><option value="published">발행됨</option><option value="refunded">환불</option></select><button class="btn sec sm" onclick="loadAdminReports()">불러오기</button></div>
+  <div class="card tablecard"><table>
+    <thead><tr><th>리포트</th><th>아이</th><th>종류</th><th>신뢰도</th><th>상태</th><th></th></tr></thead>
+    <tbody id="admReports"><tr><td colspan="6" class="mut" style="padding:16px">관리자 키 입력 후 불러오기.</td></tr></tbody>
+  </table></div>
 </template>
 
 <template id="t_a_users">
-  <div class="h"><div><h1>사용자</h1><p>부모 계정 · 아이 프로필(최대 3) · 개인정보 처리</p></div>
-    <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="부모·연락처 검색"/></div>
-  </div>
-  <div class="card tablecard">
-    <table>
-      <thead><tr><th>부모</th><th>아이</th><th>가입경로</th><th>상태</th><th></th></tr></thead>
-      <tbody>
-        <tr><td><div class="nm">윤서맘</div><div class="mut">010-••••-1234</div></td><td>큰애, 둘째 <span class="mut">(2)</span></td><td><span class="bdg auto">추천</span></td><td><span class="bdg live">활성</span></td><td class="row-act"><button class="btn gho sm">상세</button></td></tr>
-        <tr><td><div class="nm">지호맘</div><div class="mut">010-••••-5678</div></td><td>둘째 <span class="mut">(1)</span></td><td><span class="bdg auto">카페</span></td><td><span class="bdg live">활성</span></td><td class="row-act"><button class="btn gho sm">상세</button></td></tr>
-        <tr><td><div class="nm">서연맘</div><div class="mut">삭제 요청 접수</div></td><td>큰애, 둘째, 셋째 <span class="mut">(3)</span></td><td><span class="bdg auto">인스타</span></td><td><span class="bdg flag">삭제 대기</span></td><td class="row-act"><button class="btn sec sm">개인정보 삭제</button></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="h"><div><h1>사용자</h1><p>부모 계정 · 아이(최대 3) · 개인정보 삭제(PIPA)</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"><button class="btn sec sm" onclick="loadAdminUsers()">불러오기</button></div>
+  <div class="card tablecard"><table>
+    <thead><tr><th>부모 ID</th><th>아이 수</th><th>가입경로</th><th>상태</th><th></th></tr></thead>
+    <tbody id="admUsers"><tr><td colspan="5" class="mut" style="padding:16px">관리자 키 입력 후 불러오기.</td></tr></tbody>
+  </table></div>
 </template>
 
 <template id="t_a_billing">
-  <div class="h"><div><h1>결제 · 크레딧</h1><p>토스 거래 · 환불 · 크레딧 수동 조정(추천 보너스 등)</p></div>
-    <button class="btn sec">+ 크레딧 지급</button>
-  </div>
-  <div class="card tablecard">
-    <table>
-      <thead><tr><th>거래</th><th>부모</th><th>수단</th><th>금액</th><th>상태</th><th></th></tr></thead>
-      <tbody>
-        <tr><td><div class="nm">큰그림 종합</div><div class="mut">#R-2041</div></td><td>윤서맘</td><td><span class="bdg auto">카카오페이</span></td><td><b>₩79,000</b></td><td><span class="bdg live">완료</span></td><td class="row-act"><button class="btn sec sm">환불</button></td></tr>
-        <tr><td><div class="nm">대화 크레딧 충전</div></td><td>지호맘</td><td><span class="bdg auto">카드</span></td><td><b>₩4,900</b></td><td><span class="bdg live">완료</span></td><td class="row-act"><button class="btn gho sm">—</button></td></tr>
-        <tr><td><div class="nm">단품 진단</div></td><td>민준맘</td><td><span class="bdg auto">계좌이체</span></td><td><b>₩29,000</b></td><td><span class="bdg flag">실패</span></td><td class="row-act"><button class="btn sec sm">재시도 안내</button></td></tr>
-        <tr><td><div class="nm">추천 보너스</div></td><td>윤서맘</td><td><span class="bdg auto">크레딧</span></td><td><b>+₩5,000</b></td><td><span class="bdg live">지급</span></td><td class="row-act"><button class="btn gho sm">—</button></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="h"><div><h1>결제 · 크레딧</h1><p>토스 결제 내역 (실연동 후 자동 기록)</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"><button class="btn sec sm" onclick="loadPayments()">불러오기</button></div>
+  <div class="grid cards4" style="margin-bottom:16px"><div class="card metric"><div class="lab">누적 결제액</div><div class="val" id="pay_total">—</div><div class="delta up">완료</div></div></div>
+  <div class="card tablecard"><table><thead><tr><th>주문</th><th>상품</th><th>금액</th><th>상태</th></tr></thead><tbody id="payRows"><tr><td colspan="4" class="mut" style="padding:16px">관리자 키 입력 후 불러오기. (토스 연동 전엔 비어있음)</td></tr></tbody></table></div>
 </template>
 
 <template id="t_a_cost">
-  <div class="h"><div><h1>비용 · 모델 모니터</h1><p>모델 티어별 토큰·비용 · 프롬프트는 Studio에서 편집</p></div></div>
-  <div class="card pad" style="margin-bottom:16px">
-    <h3 style="margin-top:0;color:var(--blue)">이번 주 모델 사용</h3>
-    <div style="margin-top:14px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span><b>Opus 4.8</b> <span class="mut">— 큰그림 리포트</span></span><b>₩61,400</b></div>
-      <div class="bar"><i style="width:62%;background:var(--blue)"></i></div>
-    </div>
-    <div style="margin-top:16px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span><b>Sonnet 4.6</b> <span class="mut">— 대화·매니저</span></span><b>₩18,200</b></div>
-      <div class="bar"><i style="width:23%;background:var(--blue2)"></i></div>
-    </div>
-    <div style="margin-top:16px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span><b>Haiku 4.5</b> <span class="mut">— 분류·추출</span></span><b>₩3,100</b></div>
-      <div class="bar"><i style="width:8%;background:var(--solar)"></i></div>
-    </div>
-  </div>
-  <div class="split">
-    <div class="card pad"><div class="kv"><span class="mut">프롬프트 캐시 적중률</span><b>87%</b></div><div class="kv"><span class="mut">캐시 절감</span><b style="color:var(--ok)">-₩39,200</b></div><div class="kv"><span class="mut">배치 처리 비중</span><b>0% (실시간 위주)</b></div></div>
-    <div class="card pad"><div class="kv"><span class="mut">리포트당 평균 변동비</span><b>₩2,560</b></div><div class="kv"><span class="mut">큰그림 변동 마진</span><b style="color:var(--ok)">≈ 97%</b></div><div class="kv"><span class="mut">현재 활성 프롬프트</span><b>report_v4 · chat_v3</b></div></div>
-  </div>
-</template>
-
-<template id="t_a_mkt">
-  <div class="h"><div><h1>마케팅</h1><p>초대코드 · 추천 · 희소성(소프트런치)</p></div><button class="btn pri">+ 초대코드 발급</button></div>
-  <div class="grid cards4" style="margin-bottom:18px">
-    <div class="card metric"><div class="lab">초대 잔여석</div><div class="val">18</div><div class="delta flag">/ 100</div></div>
-    <div class="card metric"><div class="lab">추천 전환</div><div class="val">41%</div><div class="delta up">▲ 높음</div></div>
-    <div class="card metric"><div class="lab">추천 보너스 지급</div><div class="val">₩235K</div><div class="delta up">47건</div></div>
-    <div class="card metric"><div class="lab">카페 유입</div><div class="val">63</div><div class="delta up">이번 주</div></div>
-  </div>
-  <div class="card tablecard">
-    <table>
-      <thead><tr><th>초대코드</th><th>발급처</th><th>사용</th><th>상태</th></tr></thead>
-      <tbody>
-        <tr><td><div class="nm">DAECHI-MOM</div></td><td>대치맘 카페</td><td>23 / 30</td><td><span class="bdg live">활성</span></td></tr>
-        <tr><td><div class="nm">FIRST-50</div></td><td>소프트런치</td><td>50 / 50</td><td><span class="bdg draft">소진</span></td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="h"><div><h1>비용 · 모델</h1><p>모델 티어 구성</p></div></div>
+  <div class="card pad"><div class="kv"><span class="mut">대화·매니저</span><b>Sonnet 4.6</b></div><div class="kv"><span class="mut">리포트(큰그림)</span><b>Opus 4.8</b></div><div class="kv"><span class="mut">분류·추출</span><b>Haiku 4.5</b></div><p class="mut" style="font-size:12.5px;margin-top:14px;line-height:1.6">실제 토큰 사용량·비용은 <b>Anthropic Console</b>과 <b>Cloudflare 대시보드</b>에서 확인합니다. 앱 내 토큰 로깅은 아직 없습니다(추가 시 여기 집계).</p></div>
 </template>
 
 <template id="t_a_settings">
@@ -406,6 +267,108 @@
       <div class="kv"><span class="mut">시즌 모드</span><b>수시 (ON)</b></div>
       <div class="kv"><span class="mut">접근</span><b>Cloudflare Access</b></div>
     </div>
+  </div>
+</template>
+
+<template id="t_a_data">
+  <div class="h"><div><h1>데이터 관리</h1><p>공공데이터 수집 현황 · 갱신 (학교알리미 · 대학알리미)</p></div></div>
+  <div class="card pad" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="mut" style="font-size:13px">관리자 키</span>
+      <input id="adminKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value"
+             style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:180px">
+      <button class="btn sec sm" onclick="loadDataStatus()">현황 불러오기</button>
+      <span class="mut" id="dataMsg" style="font-size:12px"></span>
+    </div>
+  </div>
+  <div class="grid cards4" style="margin-bottom:18px">
+    <div class="card metric"><div class="lab">전국 학교</div><div class="val" id="dcSchools">—</div><div class="delta" id="dcSchoolsU">갱신일</div></div>
+    <div class="card metric"><div class="lab">대학</div><div class="val" id="dcUnis">—</div><div class="delta">4년제</div></div>
+    <div class="card metric"><div class="lab">학과</div><div class="val" id="dcProgs">—</div><div class="delta">학부</div></div>
+    <div class="card metric"><div class="lab">해석 규칙</div><div class="val" id="dcRules">—</div><div class="delta up">live</div></div>
+  </div>
+  <div class="card tablecard" style="margin-bottom:16px">
+    <div style="padding:15px 16px 4px"><h3 style="margin:0;color:var(--blue)">데이터 소스 현황 · 업데이트 목록</h3><p class="mut" style="margin:4px 0 0;font-size:12.5px">자동/파일/수동 갱신 방식과 처리해야 할 항목을 한눈에</p></div>
+    <table>
+      <thead><tr><th>데이터 소스</th><th>갱신 방식</th><th>현황</th><th>상태</th><th></th></tr></thead>
+      <tbody id="srcList"><tr><td colspan="5" class="mut" style="padding:16px">상단에서 현황을 불러오면 표시됩니다.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="split">
+    <div class="card pad">
+      <h3 style="margin-top:0;color:var(--blue)">전국 학교 갱신 (학교알리미)</h3>
+      <p class="mut" style="font-size:13px;line-height:1.6">17개 시도 고등학교를 순차 수집합니다. 약 1~2분 소요. 학교 기본정보·유형(일반고/자사고/특목고)이 갱신됩니다.</p>
+      <button class="btn pri" id="syncBtn" onclick="syncAllSchools()">⟳ 전국 학교 갱신 실행</button>
+      <div id="syncLog" style="margin-top:12px;font-size:12px;max-height:240px;overflow:auto;line-height:1.7"></div>
+    </div>
+    <div class="card pad">
+      <h3 style="margin-top:0;color:var(--blue)">대학 · 학과 데이터</h3>
+      <p class="mut" style="font-size:13px;line-height:1.6">대학·학과는 <b>대학알리미 파일(연 1회 갱신)</b> 기반입니다. 새 공시 파일이 나오면 업로드 후 반영합니다.</p>
+      <div class="kv"><span class="mut">갱신 주기</span><b>연 1회 (공시 기준)</b></div>
+      <div class="kv"><span class="mut">학교 자동 갱신</span><b>수동 버튼 (위)</b></div>
+      <div class="kv"><span class="mut">완전 자동(예약)</span><b class="mut">Workers 유료플랜 시 가능</b></div>
+      <p class="mut" style="font-size:12px;margin-top:10px;line-height:1.6">학교 데이터는 연 1회만 변경되므로 자동 예약은 과합니다. 새 학년도 공시 시점에 위 버튼 한 번이면 충분합니다.</p>
+    </div>
+  </div>
+  <div class="card pad" style="margin-top:16px">
+    <h3 style="margin-top:0;color:var(--blue)">학교 유형 분포</h3>
+    <div id="typeBars" class="mut" style="font-size:13px">현황을 불러오면 표시됩니다.</div>
+  </div>
+</template>
+
+<template id="t_a_ipgyeol">
+  <div class="h"><div><h1>입결 · 전형 입력</h1><p>대학어디가 보면서 핵심 학과 입결·전형 입력 — 파일 일괄 업로드 또는 개별 입력</p></div></div>
+  <div class="card pad" style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span class="mut" style="font-size:13px">관리자 키</span>
+    <input id="ipgKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value"
+           style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px">
+    <span class="mut" id="ipgKeyMsg" style="font-size:12px"></span>
+  </div>
+
+  <div class="card pad" style="margin-bottom:16px">
+    <h3 style="margin-top:0;color:var(--blue)">📄 파일로 일괄 업로드 (권장)</h3>
+    <p class="mut" style="font-size:13px;line-height:1.7">어디가 자료를 엑셀/시트에 정리해 <b>CSV 또는 엑셀(xlsx)</b>로 올리면 한 번에 반영됩니다. 대학명·학과명으로 자동 매칭하고, 매칭 안 된 행은 따로 알려줍니다. (한 번에 최대 400행)</p>
+    <div class="dz" id="ipgDz" ondragover="ipgDzOver(event)" ondragleave="ipgDzLeave(event)" ondrop="ipgDzDrop(event)" onclick="document.getElementById('ipgFile').click()" style="margin:8px 0;padding:22px">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue);opacity:.7"><path d="M4 14.9A5 5 0 008 21h9a5 5 0 001.9-9.6A6 6 0 006 9.4"/><path d="M12 19v-8m0 0 3.5 3.5M12 11l-3.5 3.5"/></svg>
+      <div class="dz-t" style="margin-top:8px;font-weight:700;color:var(--blue)" id="ipgDzText">입결 파일을 끌어다 놓으세요</div>
+      <div class="dz-s" style="font-size:12px;color:var(--gray);margin-top:3px">CSV · XLSX · XLS — 클릭해서 선택도 가능</div>
+      <input type="file" id="ipgFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="ipgPickFile(this.files)">
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn sec sm" onclick="dlIpgTemplate()">⬇ 양식(CSV) 다운로드</button>
+      <button class="btn pri sm" onclick="importIpg()">업로드 · 반영</button>
+    </div>
+    <div id="ipgImportLog" style="margin-top:12px;font-size:12.5px;max-height:300px;overflow:auto;line-height:1.7"></div>
+  </div>
+
+  <div class="card pad">
+    <h3 style="margin-top:0;color:var(--blue)">✏️ 개별 입력 (보조)</h3>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input id="ipgUniQ" placeholder="대학명 검색 (예: 건국대)" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:200px" onkeyup="if(event.key==='Enter')ipgSearchUni()">
+      <button class="btn sec sm" onclick="ipgSearchUni()">대학 검색</button>
+    </div>
+    <div id="ipgUniResults" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="split" style="margin-top:14px">
+      <div><div class="mut" style="font-size:12px;margin-bottom:6px" id="ipgProgTitle">학과 목록</div><div id="ipgProgList" class="mut" style="font-size:13px;max-height:300px;overflow:auto"></div></div>
+      <div><div class="mut" style="font-size:12px;margin-bottom:6px" id="ipgFormTitle">입력 폼</div><div id="ipgForm" class="mut" style="font-size:13px">학과를 선택하세요.</div></div>
+    </div>
+  </div>
+</template>
+
+<template id="t_a_mkt">
+  <div class="h"><div><h1>마케팅</h1><p>초대코드 · 유입 경로 (소프트런치 희소성)</p></div></div>
+  <div class="card pad" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="font-size:13px">관리자 키</span><input id="admKey" type="password" placeholder="admin secret" oninput="ADMIN_KEY=this.value" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;min-width:170px"><button class="btn sec sm" onclick="loadInvites()">불러오기</button></div>
+  <div class="card pad" style="margin-bottom:16px"><h3 style="margin-top:0;color:var(--blue)">초대코드 발급</h3>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="invCode" placeholder="코드 (예: DAECHI-MOM)" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px">
+      <input id="invSource" placeholder="발급처 (예: 대치맘카페)" style="font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px">
+      <input id="invMax" type="number" placeholder="최대 사용(0=무제한)" style="width:150px;font:inherit;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:8px">
+      <button class="btn pri sm" onclick="createInvite()">발급</button>
+    </div>
+  </div>
+  <div class="split">
+    <div class="card tablecard"><div style="padding:14px 16px 4px"><h3 style="margin:0;color:var(--blue)">발급된 코드</h3></div><table><thead><tr><th>코드</th><th>발급처</th><th>사용</th><th>상태</th></tr></thead><tbody id="invRows"><tr><td colspan="4" class="mut" style="padding:16px">관리자 키 입력 후 불러오기.</td></tr></tbody></table></div>
+    <div class="card pad"><h3 style="margin-top:0;color:var(--blue)">가입 경로 (실집계)</h3><div id="invSources" class="mut" style="font-size:13px">불러오면 표시됩니다.</div></div>
   </div>
 </template>
 
@@ -436,6 +399,8 @@
       ['a_billing','결제 · 크레딧','M2 7h20v12H2zM2 11h20'],
       ['a_cost','비용 · 모델','M3 3v18h18M7 14l3-3 3 3 5-6'],
       ['a_mkt','마케팅','M3 11l18-5v12L3 14zM3 11v3'],
+      ['a_data','데이터 관리','M12 5c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 8v8c0 1.7 3.6 3 8 3s8-1.3 8-3V8M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'],
+      ['a_ipgyeol','입결 입력','M9 11l3 3 8-8M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11'],
       ['a_settings','설정','M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 2h-5l-.4 2.6a7 7 0 00-1.7 1l-2.3-1-2 3.4L3.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1l.4 2.6h5l.4-2.6a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z']
     ]}
   };
@@ -456,17 +421,347 @@
     document.querySelectorAll('.nav button').forEach(function(b){b.classList.remove('on');});
     var bb=document.getElementById('b_'+id); if(bb)bb.classList.add('on');
     m.scrollTop=0;
+    // 관리자 키 복원 (탭 이동해도 유지)
+    ['admKey','adminKey','ipgKey'].forEach(function(k){var e=document.getElementById(k);if(e&&ADMIN_KEY)e.value=ADMIN_KEY;});
+    // 탭별 자동 로드 (키 있을 때)
+    if(ADMIN_KEY){
+      if(id==='a_dash')loadAdminDash();
+      else if(id==='a_reports')loadAdminReports();
+      else if(id==='a_users')loadAdminUsers();
+      else if(id==='a_data')loadDataStatus();
+      else if(id==='s_kb')loadKb();
+      else if(id==='s_inbox')loadNotes();
+      else if(id==='a_billing')loadPayments();
+      else if(id==='a_mkt')loadInvites();
+    }
   }
-  function dzOver(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.add('over');}
-  function dzLeave(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.remove('over');}
-  function dzDrop(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.remove('over');dzFiles(e.dataTransfer.files);}
-  function dzFiles(files){if(!files||!files.length)return;var tb=document.getElementById('inboxBody');if(!tb)return;for(var i=0;i<files.length;i++){var f=files[i];var kb=Math.max(1,Math.round((f.size||0)/1024));var row='<tr><td><div class="nm">'+f.name+'</div><div class="mut">방금 추가됨 · '+kb+'KB</div></td><td><span class="bdg auto">미분류</span></td><td><span class="bdg draft">미처리</span></td><td class="mut">방금</td><td class="row-act"><button class="btn sec sm" onclick="setMode(\'studio\');show(\'s_desk\')">분석</button></td></tr>';tb.insertAdjacentHTML('afterbegin',row);}}
   function setMode(mo){
     mode=mo;
     document.getElementById('mStudio').classList.toggle('on',mo==='studio');
     document.getElementById('mAdmin').classList.toggle('on',mo==='admin');
     renderNav();
     show(NAV[mode].items[0][0]);
+  }
+  var ADMIN_KEY='';
+  var SIDOS=['11','26','27','28','29','30','31','36','41','43','44','46','47','48','50','51','52'];
+  var SIDO_NM={'11':'서울','26':'부산','27':'대구','28':'인천','29':'광주','30':'대전','31':'울산','36':'세종','41':'경기','43':'충북','44':'충남','46':'전남','47':'경북','48':'경남','50':'제주','51':'강원','52':'전북'};
+  function fmt(n){return (n||0).toLocaleString();}
+  async function loadDataStatus(){
+    var msg=document.getElementById('dataMsg'); if(msg)msg.textContent='불러오는 중…';
+    try{
+      var r=await fetch('/api/studio/data-status',{headers:{'x-admin-secret':ADMIN_KEY}});
+      if(!r.ok){ if(msg)msg.textContent='키 확인 필요 ('+r.status+')'; return; }
+      var d=await r.json();
+      document.getElementById('dcSchools').textContent=fmt(d.schools);
+      document.getElementById('dcUnis').textContent=fmt(d.universities);
+      document.getElementById('dcProgs').textContent=fmt(d.programs);
+      document.getElementById('dcRules').textContent=fmt(d.rules);
+      var uEl=document.getElementById('dcSchoolsU');
+      if(d.schoolsUpdated){ uEl.textContent=new Date(d.schoolsUpdated).toLocaleDateString('ko-KR'); }
+      // 유형 분포 바
+      var tb=document.getElementById('typeBars');
+      if(d.schoolTypes && d.schoolTypes.length){
+        var max=d.schoolTypes[0].c||1, h='';
+        d.schoolTypes.forEach(function(t){
+          var w=Math.round((t.c/max)*100);
+          h+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>'+(t.type||'?')+'</span><b>'+fmt(t.c)+'</b></div><div class="bar"><i style="width:'+w+'%;background:var(--blue)"></i></div></div>';
+        });
+        tb.innerHTML=h;
+      }
+      // 데이터 소스 현황 · 업데이트 목록
+      var capOk=(d.capacity||0)>=(d.universities||0)-3;
+      var sd=d.schoolsUpdated?new Date(d.schoolsUpdated).toLocaleDateString('ko-KR'):'—';
+      function bdg(c,t){return '<span class="bdg '+c+'">'+t+'</span>';}
+      var SRC=[
+        ['전국 학교 (학교알리미)','자동 · 버튼', fmt(d.schools)+'개 · '+fmt(d.regions)+'지역', bdg('live','✓ '+sd), '<button class="btn sec sm" onclick="syncAllSchools()">갱신</button>'],
+        ['대학 (대학알리미)','파일 · 연 1회', fmt(d.universities)+'개', bdg('live','✓ 2024'), ''],
+        ['학과 (대학알리미)','파일 · 연 1회', fmt(d.programs)+'개', bdg('live','✓ 2024'), ''],
+        ['입학정원','파일 · 연 1회', fmt(d.capacity)+' / '+fmt(d.universities), capOk?bdg('live','✓ 완료'):bdg('flag','⚠ 일부 누락'), ''],
+        ['입결 합격선 (대학어디가)','수동 입력', fmt(d.ipgyeol)+'개', (d.ipgyeol>0)?bdg('auto','진행 중'):bdg('draft','⬜ 미착수'), ''],
+        ['해석 규칙','수동', fmt(d.rules)+'개', bdg('live','✓ live'), '']
+      ];
+      var sl=document.getElementById('srcList');
+      if(sl) sl.innerHTML=SRC.map(function(s){return '<tr><td><div class="nm">'+s[0]+'</div></td><td class="mut">'+s[1]+'</td><td>'+s[2]+'</td><td>'+s[3]+'</td><td class="row-act">'+s[4]+'</td></tr>';}).join('');
+      if(msg)msg.textContent='✓ '+new Date().toLocaleTimeString('ko-KR');
+    }catch(e){ if(msg)msg.textContent='오류: '+e.message; }
+  }
+  async function syncAllSchools(){
+    if(!ADMIN_KEY){alert('관리자 키를 먼저 입력하세요');return;}
+    var btn=document.getElementById('syncBtn'), log=document.getElementById('syncLog');
+    btn.disabled=true; btn.textContent='수집 중…'; log.innerHTML=''; var total=0;
+    for(var i=0;i<SIDOS.length;i++){
+      var s=SIDOS[i];
+      var line=document.createElement('div'); line.textContent='· '+SIDO_NM[s]+' 수집 중…'; log.appendChild(line);
+      try{
+        var r=await fetch('/api/data/sync',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({sido:s,schulKnd:'04'})});
+        var d=await r.json();
+        if(d.ok){ total+=d.inserted||0; line.innerHTML='✓ '+SIDO_NM[s]+': <b>'+(d.inserted||0)+'</b>개'; }
+        else { line.innerHTML='⚠ '+SIDO_NM[s]+': '+(d.error||'실패'); }
+      }catch(e){ line.innerHTML='⚠ '+SIDO_NM[s]+': 오류'; }
+    }
+    var done=document.createElement('div'); done.style.cssText='font-weight:800;margin-top:8px;color:var(--blue)'; done.textContent='완료 — 총 '+fmt(total)+'개 학교'; log.appendChild(done);
+    btn.disabled=false; btn.textContent='⟳ 전국 학교 갱신 실행';
+    loadDataStatus();
+  }
+  // ── 입결 입력 ──
+  var IPG_HEADERS=['대학명','학과명','연도','전형구분','전형명','모집인원','전형방법','수능최저','70%컷','50%컷','메모'];
+  function dlIpgTemplate(){
+    var ex=['건국대학교','컴퓨터공학부','2025','교과','KU지역균형','15','교과100%','3합7','1.77','1.70','최종등록 기준'];
+    var csv=IPG_HEADERS.join(',')+'\n'+ex.map(function(v){return '"'+v+'"';}).join(',')+'\n';
+    var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='입결_입력양식.csv';a.click();
+  }
+  function parseCSV(text){
+    text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    var rows=[],row=[],cur='',q=false;
+    for(var i=0;i<text.length;i++){var ch=text[i];
+      if(q){ if(ch=='"'){ if(text[i+1]=='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+      else { if(ch=='"')q=true; else if(ch==','){row.push(cur);cur='';} else if(ch=='\n'){row.push(cur);rows.push(row);row=[];cur='';} else cur+=ch; }
+    }
+    if(cur!==''||row.length){row.push(cur);rows.push(row);}
+    return rows;
+  }
+  var IPG_FILE=null;
+  function ipgDzOver(e){e.preventDefault();var d=document.getElementById('ipgDz');if(d)d.classList.add('over');}
+  function ipgDzLeave(e){e.preventDefault();var d=document.getElementById('ipgDz');if(d)d.classList.remove('over');}
+  function ipgDzDrop(e){e.preventDefault();var d=document.getElementById('ipgDz');if(d)d.classList.remove('over');ipgPickFile(e.dataTransfer.files);}
+  function ipgPickFile(files){if(!files||!files.length)return;IPG_FILE=files[0];var t=document.getElementById('ipgDzText');if(t)t.textContent='✓ '+IPG_FILE.name;}
+  function gridToObjects(grid){
+    grid=grid.filter(function(r){return r.some(function(c){return String(c==null?'':c).trim();});});
+    if(grid.length<2)return [];
+    var hdr=grid[0].map(function(h){return String(h==null?'':h).trim();});
+    return grid.slice(1).map(function(r){var o={};hdr.forEach(function(h,i){o[h]=String(r[i]==null?'':r[i]).trim();});return o;});
+  }
+  async function fileToRows(f){
+    var ext=(f.name.split('.').pop()||'').toLowerCase();
+    if(ext==='xlsx'||ext==='xls'){
+      if(!window.XLSX)throw new Error('엑셀 라이브러리 로딩 실패 (네트워크 확인)');
+      var buf=await f.arrayBuffer();
+      var wb=XLSX.read(buf,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      return gridToObjects(XLSX.utils.sheet_to_json(ws,{header:1,defval:''}));
+    }
+    return gridToObjects(parseCSV(await f.text()));
+  }
+  async function importIpg(){
+    if(!ADMIN_KEY){alert('관리자 키를 먼저 입력하세요');return;}
+    if(!IPG_FILE){alert('파일을 끌어다 놓거나 클릭해서 선택하세요');return;}
+    var log=document.getElementById('ipgImportLog');log.innerHTML='파일 읽는 중…';
+    try{
+      var rows=await fileToRows(IPG_FILE);
+      if(!rows.length){log.innerHTML='데이터가 없습니다.';return;}
+      log.innerHTML='반영 중… ('+rows.length+'행)';
+      var res=await fetch('/api/studio/ipgyeol-import',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({rows:rows})});
+      var d=await res.json();
+      if(!res.ok){log.innerHTML='오류: '+(d.error||res.status);return;}
+      var h='<div style="font-weight:800;color:var(--ok)">✓ 반영 '+d.applied+' / '+d.total+'행</div>';
+      if(d.unmatchedCount){h+='<div style="margin-top:8px;color:var(--warn);font-weight:700">⚠ 매칭 실패 '+d.unmatchedCount+'행 (수정 후 재업로드):</div>';
+        d.unmatched.forEach(function(u){h+='<div class="mut">· '+u.uni+' '+u.program+' — '+u.reason+'</div>';});}
+      log.innerHTML=h;
+    }catch(e){log.innerHTML='오류: '+e.message;}
+  }
+  // 개별 입력
+  var IPG_PID=null;
+  async function ipgSearchUni(){
+    if(!ADMIN_KEY){alert('관리자 키를 먼저 입력하세요');return;}
+    var q=document.getElementById('ipgUniQ').value.trim();if(!q)return;
+    var r=await fetch('/api/studio/uni-search?q='+encodeURIComponent(q),{headers:{'x-admin-secret':ADMIN_KEY}});
+    var d=await r.json();var el=document.getElementById('ipgUniResults');
+    el.innerHTML=(d.universities||[]).map(function(u){return '<button class="btn gho sm" onclick="ipgPickUni(\''+u.id+'\',\''+u.name.replace(/'/g,"")+'\')">'+u.name+'</button>';}).join('')||'<span class="mut">결과 없음</span>';
+  }
+  async function ipgPickUni(id,name){
+    document.getElementById('ipgProgTitle').textContent=name+' 학과';
+    var r=await fetch('/api/studio/programs?uni='+encodeURIComponent(id),{headers:{'x-admin-secret':ADMIN_KEY}});
+    var d=await r.json();var el=document.getElementById('ipgProgList');
+    el.innerHTML=(d.programs||[]).map(function(p){var n=0;try{n=(JSON.parse(p.admission||'{}').ipgyeol||[]).length;}catch(e){}
+      return '<div style="padding:5px 0;cursor:pointer;border-bottom:1px solid var(--line)" onclick="ipgPickProg(\''+p.id+'\',\''+p.name.replace(/'/g,"")+'\')">'+p.name+(n?' <span class="bdg live" style="font-size:9px">'+n+'</span>':'')+'</div>';}).join('')||'<span class="mut">학과 없음</span>';
+  }
+  function ipgPickProg(id,name){
+    IPG_PID=id;document.getElementById('ipgFormTitle').textContent=name;
+    var fields=[['year','연도','2025'],['type','전형구분','교과'],['name','전형명',''],['quota','모집인원',''],['method','전형방법','교과100%'],['minSuneung','수능최저','3합7'],['cut70','70%컷',''],['cut50','50%컷','']];
+    var h=fields.map(function(f){return '<div style="margin-bottom:6px"><input id="ipg_'+f[0]+'" placeholder="'+f[1]+'" value="'+(f[2]||'')+'" style="width:100%;font:inherit;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:7px"></div>';}).join('');
+    h+='<button class="btn pri sm" onclick="ipgAddEntry()" style="margin-top:4px">+ 입결 추가</button><div id="ipgEntryLog" style="margin-top:8px"></div>';
+    document.getElementById('ipgForm').innerHTML=h;
+  }
+  async function ipgAddEntry(){
+    if(!IPG_PID)return;
+    var entry={};['year','type','name','quota','method','minSuneung','cut70','cut50'].forEach(function(k){entry[k]=document.getElementById('ipg_'+k).value.trim();});
+    var r=await fetch('/api/studio/programs',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({programId:IPG_PID,entry:entry})});
+    var d=await r.json();
+    document.getElementById('ipgEntryLog').innerHTML=r.ok?'<span style="color:var(--ok)">✓ 저장됨 (총 '+d.ipgyeol.length+'개)</span>':'<span style="color:var(--warn)">오류: '+(d.error||'')+'</span>';
+  }
+  // ── Admin 운영 (실데이터) ──
+  function won(n){return '₩'+Number(n||0).toLocaleString();}
+  async function adminGet(path){var r=await fetch(path,{headers:{'x-admin-secret':ADMIN_KEY}});if(!r.ok)throw new Error(r.status);return r.json();}
+  async function loadAdminDash(){
+    if(!ADMIN_KEY){var m=document.getElementById('admDashMsg');if(m)m.textContent='관리자 키를 입력하세요';return;}
+    try{var d=await adminGet('/api/admin/dashboard');
+      setVal('ad_users',d.users);setVal('ad_reports',d.reports);setVal('ad_revenue',won(d.revenue));setVal('ad_flagged',d.flagged);
+      var m=document.getElementById('admDashMsg');if(m)m.textContent='✓ '+new Date().toLocaleTimeString('ko-KR');
+    }catch(e){var m=document.getElementById('admDashMsg');if(m)m.textContent='오류('+e.message+') — 키 확인';}
+  }
+  function setVal(id,v){var e=document.getElementById(id);if(e)e.textContent=(typeof v==='number')?v.toLocaleString():v;}
+  async function loadAdminReports(){
+    var tb=document.getElementById('admReports');if(!tb)return;
+    if(!ADMIN_KEY){tb.innerHTML='<tr><td colspan="6" class="mut" style="padding:16px">관리자 키를 입력하세요.</td></tr>';return;}
+    var f=(document.getElementById('admRepFilter')||{}).value||'all';
+    tb.innerHTML='<tr><td colspan="6" class="mut" style="padding:16px">불러오는 중…</td></tr>';
+    try{var list=await adminGet('/api/admin/reports?status='+f);
+      if(!list.length){tb.innerHTML='<tr><td colspan="6" class="mut" style="padding:16px">없음</td></tr>';return;}
+      tb.innerHTML=list.map(function(r){
+        var dt=new Date((r.created_at||0)*1000).toLocaleDateString('ko-KR');
+        var conf=Math.round((r.confidence||0)*100)+'%';
+        var stb=r.status==='flagged'?'<span class="bdg flag">저신뢰 ⚑</span>':(r.status==='refunded'?'<span class="bdg draft">환불</span>':'<span class="bdg live">발행</span>');
+        var acts='';
+        if(r.status==='flagged')acts+='<button class="btn pri sm" onclick="repAct(\''+r.id+'\',\'publish\')">승인발행</button>';
+        acts+='<button class="btn sec sm" onclick="repAct(\''+r.id+'\',\'refund\')">환불</button>';
+        return '<tr><td><div class="nm">'+r.id+'</div><div class="mut">'+dt+'</div></td><td>'+(r.kid_label||'-')+'</td><td>'+(r.kind||'')+'</td><td>'+conf+'</td><td>'+stb+'</td><td class="row-act">'+acts+'</td></tr>';
+      }).join('');
+    }catch(e){tb.innerHTML='<tr><td colspan="6" class="mut" style="padding:16px">오류('+e.message+')</td></tr>';}
+  }
+  async function repAct(id,action){
+    if(action==='refund'&&!confirm('이 리포트를 환불 처리할까요? (토스 실환불은 결제 연동 후)'))return;
+    try{await fetch('/api/admin/reports',{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({id:id,action:action})});loadAdminReports();}catch(e){alert('오류');}
+  }
+  async function loadAdminUsers(){
+    var tb=document.getElementById('admUsers');if(!tb)return;
+    if(!ADMIN_KEY){tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">관리자 키를 입력하세요.</td></tr>';return;}
+    tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">불러오는 중…</td></tr>';
+    try{var list=await adminGet('/api/admin/users');
+      if(!list.length){tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">가입자 없음</td></tr>';return;}
+      tb.innerHTML=list.map(function(u){
+        var st=u.status==='active'?'<span class="bdg live">활성</span>':'<span class="bdg draft">'+(u.status||'')+'</span>';
+        return '<tr><td><div class="nm">'+u.id+'</div><div class="mut">'+(u.nickname||u.phone||'')+'</div></td><td>'+(u.kids_count||0)+'명</td><td><span class="bdg auto">'+(u.source||'-')+'</span></td><td>'+st+'</td><td class="row-act"><button class="btn sec sm" onclick="delUser(\''+u.id+'\')">개인정보 삭제</button></td></tr>';
+      }).join('');
+    }catch(e){tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">오류('+e.message+')</td></tr>';}
+  }
+  async function delUser(pid){
+    if(!confirm('이 부모 계정과 모든 아이·대화·리포트를 영구 삭제할까요? (PIPA 삭제 요청 처리)'))return;
+    try{await fetch('/api/admin/users',{method:'DELETE',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({parentId:pid})});loadAdminUsers();}catch(e){alert('오류');}
+  }
+  // ── 지식 베이스 뷰어 ──
+  var KB_TABLE='rules';
+  async function loadKb(table){
+    if(table)KB_TABLE=table; table=KB_TABLE;
+    ['rules','schools','programs'].forEach(function(t){var b=document.getElementById('kbtab_'+t);if(b)b.classList.toggle('on',t===table);});
+    var tb=document.getElementById('kbRows');if(!tb)return;
+    if(!ADMIN_KEY){tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">관리자 키를 입력하세요.</td></tr>';return;}
+    tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">불러오는 중…</td></tr>';
+    try{var r=await fetch('/api/studio/kb?table='+table+'&status=all',{headers:{'x-admin-secret':ADMIN_KEY}});var list=await r.json();
+      if(!Array.isArray(list)||!list.length){tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">없음</td></tr>';return;}
+      tb.innerHTML=list.slice(0,200).map(function(x){
+        var content=x.content||x.name||x.id||'';var meta=x.category||x.region||x.type||'';
+        var st=x.status==='live'?'<span class="bdg live">live</span>':(x.status?'<span class="bdg draft">'+x.status+'</span>':'-');
+        var act=(x.status==='draft')?'<button class="btn pri sm" onclick="kbPublish(\''+table+'\',\''+x.id+'\')">반영</button>':'';
+        return '<tr><td><div class="nm">'+String(content).slice(0,90)+'</div></td><td class="mut">'+meta+'</td><td>'+st+'</td><td class="row-act">'+act+'</td></tr>';
+      }).join('');
+    }catch(e){tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">오류('+e.message+')</td></tr>';}
+  }
+  async function kbPublish(table,id){try{await fetch('/api/studio/publish',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({table:table,ids:[id]})});loadKb(table);}catch(e){alert('오류');}}
+  // ── Studio: 입력함 ──
+  function dzOver(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.add('over');}
+  function dzLeave(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.remove('over');}
+  function dzDrop(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.remove('over');dzFiles(e.dataTransfer.files);}
+  async function extractPdf(file){
+    if(!window.pdfjsLib)throw new Error('PDF 라이브러리 로딩 실패 (네트워크 확인)');
+    var buf=await file.arrayBuffer();
+    var pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+    var out='';
+    for(var i=1;i<=pdf.numPages;i++){var pg=await pdf.getPage(i);var tc=await pg.getTextContent();out+=tc.items.map(function(it){return it.str;}).join(' ')+'\n';}
+    return out;
+  }
+  async function dzFiles(files){
+    if(!files||!files.length)return;
+    var f=files[0], ext=(f.name.split('.').pop()||'').toLowerCase();
+    var ta=document.getElementById('noteBody'), ti=document.getElementById('noteTitle');
+    if(ti&&!ti.value)ti.value=f.name.replace(/\.[^.]+$/,'');
+    var prev=ta.value; ta.value='파일 읽는 중…';
+    try{
+      var text='';
+      if(ext==='pdf')text=await extractPdf(f);
+      else if(['txt','md','csv'].indexOf(ext)>=0)text=await f.text();
+      else{ta.value=prev;alert('PDF·TXT·MD·CSV만 자동 추출돼요. 이미지·한글(hwp)은 텍스트를 직접 붙여넣어 주세요.');return;}
+      ta.value=(text||'').trim()||'(추출된 텍스트 없음 — 스캔 PDF면 직접 입력 필요)';
+    }catch(e){ta.value=prev;alert('추출 실패: '+e.message);}
+  }
+  async function loadNotes(){
+    var tb=document.getElementById('inboxBody');if(!tb)return;
+    if(!ADMIN_KEY){tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">관리자 키를 입력하세요.</td></tr>';return;}
+    tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">불러오는 중…</td></tr>';
+    try{var r=await fetch('/api/studio/notes',{headers:{'x-admin-secret':ADMIN_KEY}});var list=await r.json();
+      if(!Array.isArray(list)||!list.length){tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">아직 원자료가 없어요.</td></tr>';return;}
+      tb.innerHTML=list.map(function(n){var dt=new Date((n.created_at||0)*1000).toLocaleDateString('ko-KR');var st=n.status==='inbox'?'<span class="bdg draft">미처리</span>':'<span class="bdg live">'+n.status+'</span>';
+        return '<tr><td><div class="nm">'+(n.title||'(제목없음)')+'</div></td><td><span class="bdg auto">'+(n.kind||'')+'</span></td><td>'+st+'</td><td class="mut">'+dt+'</td><td class="row-act"><button class="btn sec sm" onclick="deskOpen(\''+n.id+'\',\''+(n.title||'').replace(/'/g,'')+'\',\''+(n.kind||'')+'\')">분석</button></td></tr>';
+      }).join('');
+    }catch(e){tb.innerHTML='<tr><td colspan="5" class="mut" style="padding:16px">오류('+e.message+')</td></tr>';}
+  }
+  async function addNote(){
+    if(!ADMIN_KEY){alert('관리자 키를 입력하세요');return;}
+    var body=document.getElementById('noteBody').value.trim();if(!body){alert('원문을 입력하세요');return;}
+    var payload={title:document.getElementById('noteTitle').value.trim(),body:body,source:document.getElementById('noteSource').value.trim(),kind:document.getElementById('noteKind').value};
+    try{await fetch('/api/studio/notes',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify(payload)});
+      document.getElementById('noteTitle').value='';document.getElementById('noteBody').value='';document.getElementById('noteSource').value='';loadNotes();
+    }catch(e){alert('오류: '+e.message);}
+  }
+  // ── Studio: 분석 작업대 ──
+  var DESK_NOTE=null;
+  function deskOpen(id,title,kind){DESK_NOTE=id;show('s_desk');setTimeout(function(){var t=document.getElementById('deskNoteTitle');if(t)t.textContent=title||'원문';var k=document.getElementById('deskNoteKind');if(k)k.textContent=kind||'-';var raw=document.getElementById('deskRaw');if(raw)raw.textContent='"AI 분석"을 눌러 사실/규칙으로 구조화하세요.';var b=document.getElementById('deskAnalyzeBtn');if(b)b.disabled=false;var d=document.getElementById('deskDraft');if(d)d.innerHTML='<p class="mut" style="font-size:13px">AI 분석 대기 중.</p>';},30);}
+  async function analyzeNote(){
+    if(!DESK_NOTE||!ADMIN_KEY)return;
+    var d=document.getElementById('deskDraft');d.innerHTML='<p class="mut" style="font-size:13px">AI 분석 중…</p>';
+    try{var r=await fetch('/api/studio/analyze',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({noteId:DESK_NOTE})});var x=await r.json();
+      if(!r.ok){d.innerHTML='<p class="mut">오류: '+(x.error||r.status)+'</p>';return;}
+      var h='';
+      if(x.conflicts&&x.conflicts.length)h+='<div class="warnline"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L14.7 3.9a2 2 0 00-3.4 0z"/></svg><div>충돌 가능: '+x.conflicts.join('; ')+'</div></div>';
+      (x.facts||[]).forEach(function(f){h+='<div class="ai-item"><div class="row1"><span class="kind fact">사실</span><span class="meta">→ '+(f.target||'')+' · '+(f.field||'')+'</span></div><div class="txt">'+(f.value||'')+'</div></div>';});
+      (x.rules||[]).forEach(function(rl){var c=(rl.content||'').replace(/'/g,"\\'");h+='<div class="ai-item"><div class="row1"><span class="kind">규칙</span><span class="meta">'+(rl.category||'')+' · 신뢰 '+Math.round((rl.confidence||0)*100)+'%</span></div><div class="txt">'+(rl.content||'')+'</div><div class="acts"><button class="btn pri sm" onclick="approveRule(this,\''+c+'\',\''+(rl.category||'기타')+'\')">규칙 승인(live)</button></div></div>';});
+      if(!h)h='<p class="mut">추출된 항목이 없어요.</p>';
+      d.innerHTML=h;
+    }catch(e){d.innerHTML='<p class="mut">오류: '+e.message+'</p>';}
+  }
+  async function approveRule(btn,content,category){
+    try{var r=await fetch('/api/studio/kb?table=rules',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({content:content,category:category,source_note_id:DESK_NOTE})});var x=await r.json();
+      if(x.id){await fetch('/api/studio/publish',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({table:'rules',ids:[x.id]})});}
+      btn.textContent='✓ 반영됨';btn.disabled=true;btn.className='btn gho sm';
+    }catch(e){alert('오류: '+e.message);}
+  }
+  // ── Studio: 테스트 콘솔 ──
+  async function runTest(){
+    if(!ADMIN_KEY){alert('관리자 키를 입력하세요');return;}
+    var out=document.getElementById('testOut');out.textContent='분석 중…';
+    var payload={kidProfile:document.getElementById('testProfile').value.trim(),message:document.getElementById('testMsg').value.trim()||undefined,includeDraft:document.getElementById('testDraft').checked};
+    try{var r=await fetch('/api/studio/test',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify(payload)});var x=await r.json();
+      out.textContent=x.answer||x.error||'(응답 없음)';
+    }catch(e){out.textContent='오류: '+e.message;}
+  }
+  // ── Admin: 결제 ──
+  async function loadPayments(){
+    var tb=document.getElementById('payRows');if(!tb)return;
+    if(!ADMIN_KEY){tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">관리자 키를 입력하세요.</td></tr>';return;}
+    tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">불러오는 중…</td></tr>';
+    try{var r=await fetch('/api/admin/payments',{headers:{'x-admin-secret':ADMIN_KEY}});var x=await r.json();
+      setVal('pay_total',won(x.totalPaid));
+      var list=x.payments||[];
+      if(!list.length){tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">결제 내역 없음 (토스 연동 후 기록).</td></tr>';return;}
+      tb.innerHTML=list.map(function(p){var st=p.status==='paid'?'<span class="bdg live">완료</span>':(p.status==='refunded'?'<span class="bdg draft">환불</span>':'<span class="bdg draft">'+p.status+'</span>');return '<tr><td><div class="nm">'+p.id+'</div></td><td>'+(p.product||'')+'</td><td><b>'+won(p.amount)+'</b></td><td>'+st+'</td></tr>';}).join('');
+    }catch(e){tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">오류('+e.message+')</td></tr>';}
+  }
+  // ── Admin: 마케팅(초대코드·유입) ──
+  async function loadInvites(){
+    if(!ADMIN_KEY){var t=document.getElementById('invRows');if(t)t.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">관리자 키를 입력하세요.</td></tr>';return;}
+    try{var d=await adminGet('/api/admin/invites');
+      var tb=document.getElementById('invRows');var inv=d.invites||[];
+      tb.innerHTML=inv.length?inv.map(function(i){var st=i.status==='active'?'<span class="bdg live">활성</span>':'<span class="bdg draft">중지</span>';var use=i.used+(i.max_uses?(' / '+i.max_uses):'');return '<tr><td><div class="nm">'+i.code+'</div></td><td>'+(i.source||'-')+'</td><td>'+use+'</td><td>'+st+'</td></tr>';}).join(''):'<tr><td colspan="4" class="mut" style="padding:16px">발급된 코드 없음.</td></tr>';
+      var sb=document.getElementById('invSources');var src=d.sources||[];var tot=src.reduce(function(s,x){return s+x.c;},0)||1;
+      sb.innerHTML=src.length?src.map(function(s){var w=Math.round(s.c/tot*100);return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>'+s.s+'</span><b>'+s.c+'명</b></div><div class="bar"><i style="width:'+w+'%;background:var(--blue)"></i></div></div>';}).join(''):'<p class="mut">가입자 없음.</p>';
+    }catch(e){var tb=document.getElementById('invRows');if(tb)tb.innerHTML='<tr><td colspan="4" class="mut" style="padding:16px">오류('+e.message+') — invites 테이블 없으면 schema-invites.sql 적용 필요.</td></tr>';}
+  }
+  async function createInvite(){
+    if(!ADMIN_KEY){alert('관리자 키를 입력하세요');return;}
+    var code=document.getElementById('invCode').value.trim();if(!code){alert('코드를 입력하세요');return;}
+    try{await fetch('/api/admin/invites',{method:'POST',headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_KEY},body:JSON.stringify({code:code,source:document.getElementById('invSource').value.trim(),maxUses:parseInt(document.getElementById('invMax').value)||0})});
+      document.getElementById('invCode').value='';document.getElementById('invSource').value='';document.getElementById('invMax').value='';loadInvites();
+    }catch(e){alert('오류: '+e.message);}
   }
   setMode('studio');
 </script>
