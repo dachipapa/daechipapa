@@ -311,6 +311,29 @@
   .dp-lbl{font-size:11.5px;color:#a9bdda;margin-top:3px}
   .dp-lbl-accent{color:#e7c79a}
   .dp-foot{display:inline-flex;align-items:center;gap:5px;margin-top:18px;font-size:11px;color:#8ea4c6;line-height:1.4}
+  .acadot.on{background:#1f9d57}
+  .acadot.cand{background:#c2c8d2}
+  .listopen{display:flex;align-items:center;gap:10px;width:100%;margin-top:14px;padding:13px 15px;border:1px solid var(--line);border-radius:13px;background:var(--card);font-weight:700;color:var(--blue);font-size:14px;cursor:pointer}
+  .listopen .cnt{margin-left:auto;font-size:12px;color:var(--gray);font-weight:600}
+  .sheet{position:absolute;inset:0;z-index:62;background:rgba(21,32,58,.5);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center}
+  .sheet.open{display:flex}
+  .sheetcard{background:var(--bg);width:100%;max-width:480px;border-radius:22px 22px 0 0;max-height:82%;display:flex;flex-direction:column;box-shadow:0 -24px 60px rgba(0,0,0,.45);animation:sheetup .22s ease}
+  @keyframes sheetup{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet-h{display:flex;align-items:center;gap:8px;padding:18px 20px 12px;border-bottom:.5px solid var(--line)}
+  .sheet-h b{font-size:17px;color:var(--blue)}
+  .sheet-h .c{font-size:12px;color:var(--gray)}
+  .sheetx{margin-left:auto;background:none;border:none;font-size:25px;line-height:1;color:var(--gray);cursor:pointer;padding:0 4px}
+  .sheet-body{overflow-y:auto;padding:6px 16px 4px;flex:1}
+  .sheet-foot{padding:10px 18px 18px;color:var(--gray);line-height:1.5}
+  .mitem{display:flex;align-items:center;gap:11px;padding:13px 4px;border-bottom:.5px solid var(--line)}
+  .mitem .mi{flex:1;min-width:0}
+  .mitem .mi b{font-size:14.5px;color:var(--ink)}
+  .mitem .mi .meta{font-size:12px;color:var(--gray);margin-top:2px}
+  .pill{font-size:12px;font-weight:700;padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;border:1px solid var(--line)}
+  .pill.on{background:#1f9d57;border-color:#1f9d57;color:#fff}
+  .pill.off{background:transparent;color:var(--gray)}
+  .mdel{background:none;border:none;color:#c0392b;font-size:19px;cursor:pointer;padding:0 2px}
+  .mwarn{font-size:12px;color:#c0392b;padding:0 6px 10px}
 </style>
 </head>
 <body>
@@ -595,6 +618,7 @@
 
   <!-- ===== CREDITS / PAY ===== -->
   <div class="screen" id="credits">
+    <div class="topbar"><button class="back" onclick="show('dashboard')"><svg class="ic" style="width:24px;height:24px"><use href="#back"/></svg></button><div class="ttl">크레딧 · 결제</div></div>
     <div class="body"><div class="pay">
       <div class="balance"><div class="b" id="credBal">0</div><div class="l">남은 대화 크레딧</div></div>
       <div class="sect-h">크레딧 충전</div>
@@ -661,7 +685,7 @@
         사업자등록번호 255-81-02548 · <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=2558102548" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:underline">사업자정보확인</a><br>
         통신판매업신고 2024-충북청주-075<br>
         충북 청주시 청원구 향군로 155-1, 휴먼라이츠빌딩<br>
-        고객센터 043-223-8101 · info@daechipapa.com
+        개인정보관리책임자 윤태선 · 고객센터 043-223-8101 · info@daechipapa.com
       </div>
       <div class="sect-h">자주 묻는 질문</div>
       <p style="font-size:13.5px;line-height:1.7;color:var(--ink)"><b>Q. 합격을 보장하나요?</b><br>아니요. 전략적 분석과 로드맵일 뿐, 합격을 보장하지 않습니다.</p>
@@ -687,6 +711,15 @@
         <button class="sendb" onclick="mgrSend()"><svg class="ic" style="width:18px;height:18px"><use href="#send"/></svg></button>
       </div>
     </div></div>
+  </div>
+
+  <!-- 학원 리스트 시트(모달) -->
+  <div class="sheet" id="mgrSheet">
+    <div class="sheetcard">
+      <div class="sheet-h"><b>학원 리스트</b><span class="c" id="sheetCount"></span><button class="sheetx" onclick="closeSheet()">×</button></div>
+      <div class="sheet-body" id="sheetBody"></div>
+      <div class="sheet-foot"><p style="font-size:11.5px">🟢 초록 = 일정에 올린 학원 · 나머지는 후보예요. “올리기”를 누르면 캘린더에 들어가고, 겹치면 알려드려요.</p></div>
+    </div>
   </div>
 
   <!-- consent modal -->
@@ -1030,7 +1063,7 @@
   function norm(h){h=+h; if(h<12)h+=12; return h;}
   function ov(aS,aE,bS,bE){return aS<bE && bS<aE;}
   function conflict(days,s,e,exId){
-    for(var d=0;d<days.length;d++)for(var i=0;i<CLS.length;i++){var o=CLS[i];if(o.id===exId)continue;if(o.days.indexOf(days[d])>=0&&ov(s,e,o.s,o.e))return{day:days[d],subj:o.subj};}
+    for(var d=0;d<days.length;d++)for(var i=0;i<CLS.length;i++){var o=CLS[i];if(o.id===exId||!o.sched)continue;if(o.days.indexOf(days[d])>=0&&ov(s,e,o.s,o.e))return{day:days[d],subj:o.subj};}
     return null;
   }
   function carSvg(){return '<svg viewBox="0 0 120 102" class="bob"><use href="#car"/></svg>';}
@@ -1047,13 +1080,13 @@
     return{subj:subj,aca:aca,tea:tea,days:days,s:s,e:e};
   }
   function render(){
-    var n=CLS.length;
+    var on=CLS.filter(function(c){return c.sched;}),cand=CLS.filter(function(c){return !c.sched;}),n=on.length;
     var cE=document.getElementById('mgrConf');
-    if(cE)cE.innerHTML='<div class="conf ok2"><svg class="ic" style="width:18px;height:18px;color:#1f7a4d"><use href="#check"/></svg><div><b style="color:#1f7a4d">이번 주 학원 '+n+'개</b><p style="color:#2e6b4c;font-size:12.5px;margin-top:2px">겹치면 추가할 때 바로 알려드려요.</p></div></div>';
+    if(cE)cE.innerHTML='<div class="conf ok2"><svg class="ic" style="width:18px;height:18px;color:#1f7a4d"><use href="#check"/></svg><div><b style="color:#1f7a4d">이번 주 일정 '+n+'개'+(cand.length?' · 후보 '+cand.length+'개':'')+'</b><p style="color:#2e6b4c;font-size:12.5px;margin-top:2px">겹치면 추가할 때 바로 알려드려요.</p></div></div>';
     var g=document.getElementById('mgrCal');
     if(g){var h='<div class="dh" style="grid-column:1"></div>';DAYS.forEach(function(d,i){h+='<div class="dh" style="grid-column:'+(i+2)+'">'+d+'</div>';});
       for(var t=S0;t<S1;t++){h+='<div class="tl" style="grid-row:'+(t-S0+2)+'">'+t+'</div>';}
-      CLS.forEach(function(C){C.days.forEach(function(d){var di=DAYS.indexOf(d);if(di<0)return;var r1=Math.max(C.s,S0)-S0+2,r2=Math.min(C.e,S1)-S0+2;if(r2<=r1)return;h+='<div class="blk aca" style="grid-column:'+(di+2)+';grid-row:'+r1+'/'+r2+'">'+C.subj+'</div>';});});
+      on.forEach(function(C){C.days.forEach(function(d){var di=DAYS.indexOf(d);if(di<0)return;var r1=Math.max(C.s,S0)-S0+2,r2=Math.min(C.e,S1)-S0+2;if(r2<=r1)return;h+='<div class="blk aca" style="grid-column:'+(di+2)+';grid-row:'+r1+'/'+r2+'">'+C.subj+'</div>';});});
       g.innerHTML=h;}
     var cd=document.getElementById('mgrCand');
     if(cd)cd.innerHTML='<div class="sect-h" style="margin-top:18px">빠른 추가 (예시)</div><div style="display:flex;flex-wrap:wrap;gap:8px">'
@@ -1062,7 +1095,44 @@
       +'<button class="qchip" onclick="mgrQuick(\'에이스과학 오쌤 과학 수 5시 넣어줘\')">과학 수 5시</button>'
       +'</div>';
     var l=document.getElementById('mgrList');
-    if(l){var lh='<div class="sect-h">학원 목록</div>';if(CLS.length===0)lh+='<p style="font-size:13px;color:var(--gray)">아직 없어요. 대화로 넣어보세요.</p>';CLS.forEach(function(C){lh+='<div class="acarow"><span class="acadot"></span><div style="flex:1"><b>'+C.subj+'</b> <span style="font-size:11.5px;color:var(--gray)">'+(C.aca?'· '+C.aca:'')+(C.tea?' · '+C.tea+'쌤':'')+'</span></div><span>'+C.days.join('·')+' '+C.s+'–'+C.e+'</span></div>';});l.innerHTML=lh;}
+    if(l){var lh='';if(on.length){lh+='<div class="sect-h">이번 주 일정</div>';on.forEach(function(C){lh+='<div class="acarow"><span class="acadot on"></span><div style="flex:1"><b>'+C.subj+'</b> <span style="font-size:11.5px;color:var(--gray)">'+(C.aca?'· '+C.aca:'')+(C.tea?' · '+C.tea+'쌤':'')+'</span></div><span>'+C.days.join('·')+' '+C.s+'–'+C.e+'</span></div>';});}lh+='<button class="listopen" onclick="openSheet()"><svg class="ic" style="width:18px;height:18px;color:var(--blue)"><use href="#cal"/></svg>학원 리스트 관리<span class="cnt">'+CLS.length+'개'+(cand.length?' · 후보 '+cand.length:'')+'</span></button>';if(CLS.length===0)lh='<p style="font-size:13px;color:var(--gray)">아직 학원이 없어요. 아래 대화로 넣어보세요.</p>'+lh;l.innerHTML=lh;if(document.getElementById('mgrSheet')&&document.getElementById('mgrSheet').classList.contains('open'))renderSheet();}
+  }
+  window.openSheet=function(){var s=document.getElementById('mgrSheet');if(s){renderSheet();s.classList.add('open');}};
+  window.closeSheet=function(){var s=document.getElementById('mgrSheet');if(s)s.classList.remove('open');};
+  function renderSheet(){
+    var b=document.getElementById('sheetBody'),c=document.getElementById('sheetCount');
+    if(c)c.textContent=CLS.length?('· '+CLS.length+'개'):'';
+    if(!b)return;
+    if(!CLS.length){b.innerHTML='<p style="font-size:13px;color:var(--gray);padding:26px 4px;text-align:center;line-height:1.6">아직 학원이 없어요.<br>아래 대화로 “정상어학원 김쌤 영어 화목 7시”처럼 넣어보세요.</p>';return;}
+    var html='';
+    CLS.forEach(function(C){
+      html+='<div class="mitem"><span class="acadot '+(C.sched?'on':'cand')+'"></span>'
+        +'<div class="mi"><b>'+C.subj+'</b><div class="meta">'+(C.aca?C.aca:'')+(C.tea?' · '+C.tea+'쌤':'')+' · '+C.days.join('·')+' '+C.s+'–'+C.e+'시</div></div>'
+        +'<button class="pill '+(C.sched?'on':'off')+'" onclick="toggleSched(\''+C.id+'\')">'+(C.sched?'일정 ✓':'올리기')+'</button>'
+        +'<button class="mdel" onclick="delItem(\''+C.id+'\')">×</button></div>';
+      if(C._warn)html+='<div class="mwarn">⚠ '+C._warn+'</div>';
+    });
+    b.innerHTML=html;
+  }
+  window.toggleSched=function(id){
+    var C=null;for(var i=0;i<CLS.length;i++){if(String(CLS[i].id)===String(id)){C=CLS[i];break;}}
+    if(!C)return;CLS.forEach(function(x){x._warn='';});
+    if(!C.sched){
+      var cf=conflict(C.days,C.s,C.e,C.id);
+      if(cf){C._warn=cf.day+'요일 '+C.s+'시엔 '+cf.subj+'이(가) 이미 일정에 있어요. 시간을 바꾸거나 그 학원을 내려야 해요.';renderSheet();return;}
+      C.sched=true;
+    }else{C.sched=false;}
+    render();renderSheet();persistSched(C);
+  };
+  window.delItem=function(id){
+    var C=null;for(var i=0;i<CLS.length;i++){if(String(CLS[i].id)===String(id)){C=CLS[i];break;}}
+    CLS=CLS.filter(function(x){return String(x.id)!==String(id);});
+    render();renderSheet();
+    if(C&&C.id&&String(C.id).indexOf('sch_')===0)fetch('/api/schedules',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:C.id})}).catch(function(){});
+  };
+  function persistSched(C){
+    if(!C||!C.id||String(C.id).indexOf('sch_')!==0)return;
+    fetch('/api/schedules',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:C.id,scheduled:C.sched?1:0})}).catch(function(){});
   }
   window.mgrQuick=function(t){var i=document.getElementById('mgrInput');if(i)i.value=t;window.mgrSend();};
   window.mgrSend=function(){
@@ -1070,13 +1140,11 @@
     if(/빼|삭제|취소|지워|없애|제거/.test(t)){var p0=parse(t);if(p0.subj){var removed=CLS.filter(function(c){return c.subj===p0.subj;});var before=CLS.length;CLS=CLS.filter(function(c){return c.subj!==p0.subj;});addMsg('ai',(before>CLS.length)?('뺐어요 — <b>'+p0.subj+'</b> 삭제 ✅'):'그 과목은 목록에 없어요.');render();var kid=(typeof activeKidId==='function')?activeKidId():null;if(kid){removed.forEach(function(c){if(c.id&&String(c.id).indexOf('sch_')===0)fetch('/api/schedules',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:c.id})}).catch(function(){});});}}else{addMsg('ai','어떤 과목을 뺄까요?');}return;}
     var p=parse(t);
     if(!p.subj||p.s===null||p.days.length===0){addMsg('ai','학원·과목·요일·시간을 같이 말해주세요. 예: <b>정상어학원 김쌤 영어 화목 7시</b>');return;}
-    var cf=conflict(p.days,p.s,p.e,null);
-    if(cf){addMsg('ai','⚠ <b>'+cf.day+'요일 '+p.s+'시</b>엔 이미 <b>'+cf.subj+'</b>이(가) 있어요 — 겹쳐요. 다른 시간으로 말해주세요.');return;}
-    CLS.push({id:'c'+(++seq),subj:p.subj,aca:p.aca,tea:p.tea,days:p.days,s:p.s,e:p.e});
-    addMsg('ai','넣었어요 — <b>'+p.subj+'</b> '+p.days.join('·')+' '+p.s+'–'+p.e+'시'+(p.aca?' ('+p.aca+(p.tea?'·'+p.tea+'쌤':'')+')':'')+' ✅');
+    CLS.push({id:'c'+(++seq),subj:p.subj,aca:p.aca,tea:p.tea,days:p.days,s:p.s,e:p.e,sched:false});
+    addMsg('ai','후보에 담았어요 — <b>'+p.subj+'</b> '+p.days.join('·')+' '+p.s+'–'+p.e+'시'+(p.aca?' ('+p.aca+(p.tea?'·'+p.tea+'쌤':'')+')':'')+'. <b>학원 리스트 관리</b>에서 “올리기”를 누르면 캘린더에 들어가요 📋');
     render();
     var kid=(typeof activeKidId==='function')?activeKidId():null;
-    if(kid){var last=CLS[CLS.length-1];fetch('/api/schedules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kidId:kid,subject:p.subj,academy:p.aca,teacher:p.tea,days:p.days,startHour:p.s,endHour:p.e})}).then(function(r){return r.json();}).then(function(d){if(d.id)last.id=d.id;}).catch(function(){});}
+    if(kid){var last=CLS[CLS.length-1];fetch('/api/schedules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kidId:kid,subject:p.subj,academy:p.aca,teacher:p.tea,days:p.days,startHour:p.s,endHour:p.e,scheduled:0})}).then(function(r){return r.json();}).then(function(d){if(d.id)last.id=d.id;}).catch(function(){});}
   };
   window._mgrKid=null;
   window.renderManager=async function(){
@@ -1087,7 +1155,7 @@
       try{
         var r=await fetch('/api/schedules?kidId='+encodeURIComponent(kid));
         var d=await r.json();
-        CLS=(d.schedules||[]).map(function(x){return {id:x.id,subj:x.subject,aca:x.academy,tea:x.teacher,days:x.days||[],s:x.start,e:x.end};});
+        CLS=(d.schedules||[]).map(function(x){return {id:x.id,subj:x.subject,aca:x.academy,tea:x.teacher,days:x.days||[],s:x.start,e:x.end,sched:!!x.scheduled};});
         seq=CLS.length;
       }catch(e){}
       addMsg('ai','말로 학원을 넣어보세요 — 예: "정상어학원 김쌤 영어 화목 7시". 제가 캘린더에 올리고, 겹치면 바로 알려드려요.');

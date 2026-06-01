@@ -1,0 +1,1 @@
+ALTER TABLE schedules ADD COLUMN scheduled INTEGER DEFAULT 0;
