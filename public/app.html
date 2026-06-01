@@ -926,7 +926,7 @@
         return;
       }
     }
-    if(h.indexOf('err=')>=0){history.replaceState(null,'',location.pathname+location.search);}
+    if(h.indexOf('err=')>=0){var em={};h.slice(1).split('&').forEach(function(kv){var a=kv.split('=');em[a[0]]=a[1];});history.replaceState(null,'',location.pathname+location.search);alert('로그인 실패 지점: '+(em.err||'unknown')+'\n(이 코드를 알려주세요)');}
     if(PARENT_ID){await loadParent(); show((KIDS&&KIDS.length>0)?'dashboard':'onboard');}
   }
   // 로그인 상태에서 뒤로가기(bfcache 복원 포함) 시 랜딩 대신 앱으로 — 세션 유지
