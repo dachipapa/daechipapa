@@ -701,7 +701,7 @@
     <div class="body"><div class="set">
       <div class="hello" style="font-size:22px">내 계정</div>
       <div style="margin-top:16px" id="acctRows"></div>
-      <p class="mut" style="font-size:12px;margin-top:16px;line-height:1.6">계정 정보는 결제·고객상담·본인확인을 위해 사용되며, 소셜 로그인 시 제공받은 정보예요. 아이의 실명은 수집하지 않습니다.</p>
+      <p class="mut" style="font-size:12px;margin-top:16px;line-height:1.6">계정 정보는 결제·고객상담·본인확인을 위해 사용되며, 소셜 로그인 시 제공받은 정보예요.</p>
     </div></div>
   </div>
 
@@ -870,7 +870,7 @@
   async function loadParent(){
     if(!PARENT_ID)return;
     try{var r=await fetch('/api/parent?parentId='+encodeURIComponent(PARENT_ID));var d=await r.json();
-      if(d&&d.parent){PARENT=d.parent;KIDS=d.kids||[];var saved=localStorage.getItem('activeKidId');ACTIVE=KIDS.filter(function(k){return k.id===saved;})[0]||KIDS[0]||null;if(ACTIVE)localStorage.setItem('activeKidId',ACTIVE.id);renderActiveKid();}
+      if(d&&d.parent){PARENT=d.parent;KIDS=d.kids||[];var saved=localStorage.getItem('activeKidId');ACTIVE=KIDS.filter(function(k){return k.id===saved;})[0]||KIDS[0]||null;if(ACTIVE)localStorage.setItem('activeKidId',ACTIVE.id);renderActiveKid();updateAuthUI();}
     }catch(e){}
   }
   window.renderAccount=function(){
@@ -880,6 +880,15 @@
     function row(label,val){return '<div class="setrow" style="justify-content:space-between"><span style="color:var(--gray);font-weight:600">'+label+'</span><b style="color:var(--ink)">'+esc2(val||'—')+'</b></div>';}
     var el=document.getElementById('acctRows');
     if(el)el.innerHTML=row('이름',p.name)+row('휴대전화',p.phone)+row('이메일',p.email)+row('로그인',prov);
+  };
+  function authedName(){ return (PARENT&&PARENT.provider)?(PARENT.name||PARENT.nickname||'내 계정'):null; }
+  window.updateAuthUI=function(){
+    var nm=authedName();
+    document.querySelectorAll('.nav-login,.mlogin').forEach(function(a){
+      var m=a.classList.contains('mlogin');
+      if(nm){a.textContent=nm;a.onclick=function(){if(m)closeMenu();renderAccount();show('account');return false;};}
+      else{a.textContent='로그인';a.onclick=function(){if(m)closeMenu();show('auth');return false;};}
+    });
   };
   async function initSession(){
     var h=location.hash||'';
