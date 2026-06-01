@@ -894,7 +894,7 @@
   async function loadParent(){
     if(!PARENT_ID)return;
     try{var r=await fetch('/api/parent?parentId='+encodeURIComponent(PARENT_ID));var d=await r.json();
-      if(d&&d.parent){PARENT=d.parent;KIDS=d.kids||[];var saved=localStorage.getItem('activeKidId');ACTIVE=KIDS.filter(function(k){return k.id===saved;})[0]||KIDS[0]||null;if(ACTIVE)localStorage.setItem('activeKidId',ACTIVE.id);renderActiveKid();updateAuthUI();}
+      if(d&&d.parent){PARENT=d.parent;if(PARENT.provider){localStorage.setItem('authName',PARENT.name||PARENT.nickname||'내 계정');}else{localStorage.removeItem('authName');}KIDS=d.kids||[];var saved=localStorage.getItem('activeKidId');ACTIVE=KIDS.filter(function(k){return k.id===saved;})[0]||KIDS[0]||null;if(ACTIVE)localStorage.setItem('activeKidId',ACTIVE.id);renderActiveKid();updateAuthUI();}
     }catch(e){}
   }
   window.renderAccount=function(){
@@ -906,7 +906,7 @@
     if(el)el.innerHTML=row('이름',p.name)+row('휴대전화',p.phone)+row('이메일',p.email)+row('로그인',labels[p.provider]||(p.provider?p.provider:'기기 계정'));
     var box=document.getElementById('acctLogins'); if(box)box.innerHTML='';
   };
-  function authedName(){ return (PARENT&&PARENT.provider)?(PARENT.name||PARENT.nickname||'내 계정'):null; }
+  function authedName(){ if(PARENT&&PARENT.provider)return PARENT.name||PARENT.nickname||'내 계정'; if(PARENT_ID){var n=localStorage.getItem('authName'); if(n)return n;} return null; }
   window.updateAuthUI=function(){
     var nm=authedName();
     document.querySelectorAll('.nav-login,.mlogin').forEach(function(a){
@@ -927,7 +927,7 @@
       }
     }
     if(h.indexOf('err=')>=0){var em={};h.slice(1).split('&').forEach(function(kv){var a=kv.split('=');em[a[0]]=a[1];});history.replaceState(null,'',location.pathname+location.search);alert('로그인 실패 지점: '+(em.err||'unknown')+'\n(이 코드를 알려주세요)');}
-    if(PARENT_ID){show('dashboard'); await loadParent(); show((KIDS&&KIDS.length>0)?'dashboard':'onboard');}
+    if(PARENT_ID){updateAuthUI(); show('dashboard'); await loadParent(); show((KIDS&&KIDS.length>0)?'dashboard':'onboard');}
   }
   // 로그인 상태에서 뒤로가기(bfcache 복원 포함) 시 랜딩 대신 앱으로 — 세션 유지
   window.addEventListener('pageshow',function(e){ if(e.persisted && PARENT_ID){ show('dashboard'); loadParent().then(function(){ show((KIDS&&KIDS.length>0)?'dashboard':'onboard'); }); } });
@@ -1100,9 +1100,9 @@
   // ===== 탈퇴 · 데이터 삭제 (개인정보보호법) =====
   function logout(){
     if(!confirm('로그아웃할까요?'))return;
-    localStorage.removeItem('parentId');localStorage.removeItem('activeKidId');localStorage.removeItem('authProvider');
-    PARENT_ID=null;KIDS=[];ACTIVE=null;_chatInited=false;window._mgrKid=null;
-    renderActiveKid();show('landing');
+    localStorage.removeItem('parentId');localStorage.removeItem('activeKidId');localStorage.removeItem('authProvider');localStorage.removeItem('authName');
+    PARENT_ID=null;PARENT=null;KIDS=[];ACTIVE=null;_chatInited=false;window._mgrKid=null;
+    renderActiveKid();updateAuthUI();show('landing');
   }
   async function deleteAccount(){
     if(!confirm('정말 탈퇴할까요?\n모든 아이 프로필·대화·리포트가 영구 삭제되며 되돌릴 수 없어요.'))return;
