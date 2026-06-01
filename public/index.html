@@ -2,15 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>대치파파 — 예측이 아니라, 분석입니다</title>
-<link rel="manifest" href="/manifest.json"/>
-<meta name="theme-color" content="#183367"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="대치파파"/>
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png"/>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.min.css"/>
 <style>
   :root{
@@ -140,6 +133,27 @@
     .big{padding:28px 24px}
     .nav-cta{padding:8px 14px;font-size:13px}
   }
+
+  .dpband{background:var(--blue);border-radius:30px;padding:50px 42px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+  .dpband::after{content:"";position:absolute;right:-90px;top:-70px;width:300px;height:300px;background:radial-gradient(circle,rgba(224,146,47,.18),transparent 65%);pointer-events:none}
+  .dpband>*{position:relative;z-index:1}
+  .dp-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:7px 16px;border-radius:999px;font-size:13px;font-weight:700;color:#cfe0f7;margin-bottom:20px}
+  .dp-dot{width:7px;height:7px;border-radius:50%;background:var(--solar);display:inline-block;animation:dpblink 1.6s ease-in-out infinite}
+  @keyframes dpblink{0%,100%{opacity:1}50%{opacity:.25}}
+  .dp-hero{display:flex;align-items:baseline;justify-content:center;gap:4px;line-height:1}
+  .dp-hero .dp-num{font-size:clamp(50px,9vw,70px);font-weight:800;color:var(--solar);letter-spacing:-.045em}
+  .dp-plus{font-size:clamp(30px,5vw,38px);font-weight:800;color:var(--solar)}
+  .dp-unit{font-size:24px;font-weight:700;color:#fff;margin-left:4px}
+  .dp-sub{font-size:clamp(15px,2.2vw,17px);font-weight:500;color:#dce6f5;margin-top:14px;line-height:1.6}
+  .dp-sub b{color:#fff;font-weight:800}
+  .dp-rule{height:1px;background:rgba(207,227,247,.18);margin:28px 0 22px}
+  .dp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .dp-grid .dp-num{font-size:clamp(24px,4vw,28px);font-weight:800;color:#fff;letter-spacing:-.03em}
+  .dp-grid .dp-accent{color:var(--solar)}
+  .dp-lbl{font-size:12.5px;color:#a9bdda;margin-top:4px}
+  .dp-lbl-accent{color:#e7c79a}
+  .dp-foot{display:inline-flex;align-items:center;gap:6px;margin-top:24px;font-size:11.5px;color:#8ea4c6}
+  @media(max-width:760px){.dpband{padding:38px 24px 32px;border-radius:24px}.dp-grid{grid-template-columns:repeat(2,1fr);gap:22px 12px}}
 </style>
 </head>
 <body>
@@ -173,42 +187,23 @@
   </div>
 </div>
 
-<style>
-  .statsband{background:linear-gradient(180deg,#f6f9ff,#fff);border-top:1px solid #eef2f9;border-bottom:1px solid #eef2f9}
-  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
-  .statc{background:#fff;border:1px solid #e7edf7;border-radius:16px;padding:22px 12px;box-shadow:0 1px 3px rgba(24,51,103,.05)}
-  .statc .num{font-size:34px;font-weight:800;color:#183367;line-height:1.1;letter-spacing:-.02em}
-  .statc .lab{font-size:13px;color:#5b6b85;margin-top:6px;font-weight:600}
-  .statnote{font-size:12px;color:#8a94a6;margin-top:16px}
-  @media(max-width:640px){.statgrid{grid-template-columns:repeat(2,1fr)}.statc .num{font-size:28px}}
-</style>
-<section class="statsband">
-  <div class="wrap center">
-    <div class="eyebrow">공개 데이터 기반</div>
-    <h2 style="margin-bottom:6px">전국 입시 데이터를 수집·분석합니다</h2>
-    <p class="lead" style="margin-bottom:22px">학교알리미·대학알리미 등 <b>공개 데이터</b>를 모아, 평가자의 해석을 더합니다.</p>
-    <div class="statgrid">
-      <div class="statc"><div class="num" id="st_schools">—</div><div class="lab">전국 고등학교</div></div>
-      <div class="statc"><div class="num" id="st_unis">—</div><div class="lab">전국 대학</div></div>
-      <div class="statc"><div class="num" id="st_progs">—</div><div class="lab">학과</div></div>
-      <div class="statc"><div class="num" id="st_rules">—</div><div class="lab">분석 해석 규칙</div></div>
+<section>
+  <div class="wrap">
+    <div class="dpband reveal">
+      <div class="dp-pill"><span class="dp-dot"></span>직접 조사한 실데이터 기반</div>
+      <div class="dp-hero"><span class="dp-num" data-key="total" data-fallback="13032">0</span><span class="dp-plus">+</span><span class="dp-unit">건</span></div>
+      <p class="dp-sub">대치파파가 쌓아온 입시 데이터를 <b>입시 전용 알고리즘</b>으로<br/>우리 아이에 맞춰 분석합니다</p>
+      <div class="dp-rule"></div>
+      <div class="dp-grid">
+        <div><div class="dp-num" data-key="schools" data-fallback="2446">0</div><div class="dp-lbl">전국 고교</div></div>
+        <div><div class="dp-num" data-key="universities" data-fallback="227">0</div><div class="dp-lbl">대학</div></div>
+        <div><div class="dp-num" data-key="programs" data-fallback="10319">0</div><div class="dp-lbl">학과 · 전공</div></div>
+        <div><div class="dp-num dp-accent" data-key="rules" data-fallback="40" data-suffix="종">0</div><div class="dp-lbl dp-lbl-accent">입시 전용 알고리즘</div></div>
+      </div>
+      <div class="dp-foot"><span>↻</span> 스튜디오에서 데이터가 쌓일 때마다 실시간 누적 반영</div>
     </div>
-    <p class="statnote">※ 공개 데이터를 지속 수집·갱신합니다. 합격을 예측·보장하지 않는 참고용 분석입니다.</p>
   </div>
 </section>
-<script>
-  (function(){
-    function animate(el,target){if(!el)return;var d=1000,t0=null;function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/d,1);el.textContent=Math.floor(p*target).toLocaleString();if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
-    fetch('/api/stats').then(function(r){return r.json();}).then(function(d){
-      animate(document.getElementById('st_schools'),d.schools||0);
-      animate(document.getElementById('st_unis'),d.universities||0);
-      animate(document.getElementById('st_progs'),d.programs||0);
-      animate(document.getElementById('st_rules'),d.rules||0);
-    }).catch(function(){
-      ['st_schools','st_unis','st_progs','st_rules'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent='—';});
-    });
-  })();
-</script>
 
 <section id="how">
   <div class="wrap center">
@@ -316,5 +311,15 @@
     <path d="M42 75 Q60 85 78 75" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
   </symbol>
 </defs></svg>
+<script>
+(function(){
+  function ease(t){return 1-Math.pow(1-t,3);}
+  function run(el,to,dur){var s=null,sfx=el.dataset.suffix||"";requestAnimationFrame(function f(n){if(!s)s=n;var p=Math.min((n-s)/dur,1);el.textContent=Math.round(to*ease(p)).toLocaleString("ko-KR")+sfx;if(p<1)requestAnimationFrame(f);});}
+  function paint(d){var keys=["schools","universities","programs","rules"];var total=d?keys.reduce(function(a,k){return a+(parseInt(d[k],10)||0);},0):null;document.querySelectorAll(".dpband .dp-num").forEach(function(el){var k=el.dataset.key,v;if(k==="total"){v=(total!=null)?total:parseInt(el.dataset.fallback,10);}else{v=(d&&d[k]!=null)?d[k]:parseInt(el.dataset.fallback,10);}run(el,parseInt(v,10)||0,1400);});}
+  var band=document.querySelector(".dpband"),fired=false;
+  function go(){if(fired)return;fired=true;fetch("/api/stats",{headers:{accept:"application/json"}}).then(function(r){return r.ok?r.json():null;}).then(paint).catch(function(){paint(null);});}
+  if("IntersectionObserver"in window&&band){new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)go();});},{threshold:.3}).observe(band);}else{go();}
+})();
+</script>
 </body>
 </html>
