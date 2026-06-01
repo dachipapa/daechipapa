@@ -29,7 +29,7 @@ export async function onRequest({ request, env }) {
     } else if (table === "prompts") {
       const ver = (data.version || 1);
       await env.DB.prepare(
-        "INSERT OR REPLACE INTO prompts (id,kind,version,content,status) VALUES (?,?,?,'draft')"
+        "INSERT OR REPLACE INTO prompts (id,kind,version,content,status) VALUES (?,?,?,?,'draft')"
       ).bind(id, data.kind, ver, data.content).run();
     } else if (table === "schools") {
       await env.DB.prepare(
