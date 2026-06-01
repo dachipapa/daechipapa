@@ -927,12 +927,12 @@
       }
     }
     if(h.indexOf('err=')>=0){var em={};h.slice(1).split('&').forEach(function(kv){var a=kv.split('=');em[a[0]]=a[1];});history.replaceState(null,'',location.pathname+location.search);alert('로그인 실패 지점: '+(em.err||'unknown')+'\n(이 코드를 알려주세요)');}
-    if(PARENT_ID){await loadParent(); show((KIDS&&KIDS.length>0)?'dashboard':'onboard');}
+    if(PARENT_ID){show('dashboard'); await loadParent(); show((KIDS&&KIDS.length>0)?'dashboard':'onboard');}
   }
   // 로그인 상태에서 뒤로가기(bfcache 복원 포함) 시 랜딩 대신 앱으로 — 세션 유지
-  window.addEventListener('pageshow',function(e){ if(e.persisted && PARENT_ID){ loadParent().then(function(){ show((KIDS&&KIDS.length>0)?'dashboard':'onboard'); }); } });
+  window.addEventListener('pageshow',function(e){ if(e.persisted && PARENT_ID){ show('dashboard'); loadParent().then(function(){ show((KIDS&&KIDS.length>0)?'dashboard':'onboard'); }); } });
   function activeKidId(){return ACTIVE?ACTIVE.id:null;}
-  function kidInfo(k){return (k.school||'학교')+(k.grade?' '+k.grade:'')+(k.track?' · '+k.track:'')+(k.cohort?' · '+k.cohort+' 코호트':'');}
+  function kidInfo(k){var y=(k.cohort&&/^\d{4}$/.test(String(k.cohort)))?(' · 입시 '+k.cohort):'';return (k.school||'학교')+(k.grade?' '+k.grade:'')+(k.track?' · '+k.track:'')+y;}
   function renderActiveKid(){
     if(!ACTIVE){setText('greeting_name','우리 아이의 마일스톤을 그려볼까요?');setText('kid_who','프로필을 만들어 시작하세요');setText('mgr_chip','우리 아이');return;}
     setText('greeting_name',ACTIVE.label+'의 마일스톤을 그려볼까요?');
