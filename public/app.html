@@ -21,8 +21,14 @@
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%}
-  body{font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#c9c5bd;color:var(--ink);-webkit-font-smoothing:antialiased;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px;letter-spacing:-.015em}
-  .phone{width:100%;max-width:412px;height:872px;background:var(--bg);border-radius:44px;overflow:hidden;position:relative;box-shadow:0 60px 110px -40px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.06)}
+  body{font-family:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;letter-spacing:-.015em}
+  .phone{width:100%;height:100vh;height:100dvh;background:var(--bg);overflow:hidden;position:relative}
+  @media (min-width:600px){
+    body{background:#c9c5bd;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px}
+    .phone{max-width:412px;height:872px;border-radius:44px;box-shadow:0 60px 110px -40px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.06)}
+    .tabs{padding-bottom:14px}
+    .nav,.topbar{padding-top:14px}
+  }
   .ic{display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
   /* screens */
@@ -32,7 +38,7 @@
   .body::-webkit-scrollbar{width:0}
 
   /* top bars */
-  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;position:sticky;top:0;z-index:10;background:rgba(251,250,246,.8);backdrop-filter:saturate(180%) blur(18px);border-bottom:.5px solid rgba(21,32,58,.08)}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 20px 14px;position:sticky;top:0;z-index:10;background:rgba(251,250,246,.8);backdrop-filter:saturate(180%) blur(18px);border-bottom:.5px solid rgba(21,32,58,.08)}
   .brand{display:flex;align-items:center;gap:7px;font-weight:800;font-size:17px;color:var(--blue);letter-spacing:-.03em}
   .brand svg{width:32px;height:27px}
   .nav-r{display:flex;align-items:center;gap:14px}
@@ -46,7 +52,7 @@
   .mlinks a{font-size:28px;font-weight:800;letter-spacing:-.04em;color:var(--blue);text-decoration:none;padding:9px 0}
   .mfoot{margin-top:auto;display:flex;flex-direction:column;gap:14px;border-top:.5px solid var(--line);padding-top:20px}
   .mlogin{font-size:15px;font-weight:600;color:var(--gray);text-decoration:none}
-  .topbar{display:flex;align-items:center;gap:12px;padding:14px 18px;position:sticky;top:0;z-index:10;background:rgba(251,250,246,.85);backdrop-filter:blur(18px);border-bottom:.5px solid rgba(21,32,58,.08)}
+  .topbar{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;position:sticky;top:0;z-index:10;background:rgba(251,250,246,.85);backdrop-filter:blur(18px);border-bottom:.5px solid rgba(21,32,58,.08)}
   .topbar .back{width:30px;height:30px;color:var(--ink);background:none;border:none;cursor:pointer}
   .topbar .ttl{font-size:17px;font-weight:800;letter-spacing:-.03em;color:var(--blue)}
   .topbar .credit{margin-left:auto;font-size:12px;font-weight:700;color:var(--solar-d);background:#fbf1e3;border:.5px solid #f0dcc2;padding:5px 11px;border-radius:999px}
@@ -193,7 +199,7 @@
   .rrow .rx span{display:block;font-size:12px;color:var(--gray);margin-top:2px}
 
   /* bottom tab */
-  .tabs{position:absolute;left:0;right:0;bottom:0;display:flex;background:rgba(251,250,246,.92);backdrop-filter:blur(18px);border-top:.5px solid var(--line);padding:9px 6px 14px;z-index:20}
+  .tabs{position:absolute;left:0;right:0;bottom:0;display:flex;background:rgba(251,250,246,.92);backdrop-filter:blur(18px);border-top:.5px solid var(--line);padding:9px 6px calc(14px + env(safe-area-inset-bottom));z-index:20}
   .tabs.hide{display:none}
   .tab{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--gray);font:inherit}
   .tab .ic{width:23px;height:23px}
