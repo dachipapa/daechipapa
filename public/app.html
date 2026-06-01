@@ -617,6 +617,7 @@
         <div class="setrow" onclick="show('credits')"><svg class="ic"><use href="#card"/></svg>크레딧 · 결제<svg class="ic chev" style="width:18px"><use href="#chev"/></svg></div>
         <div class="setrow"><svg class="ic"><use href="#clock"/></svg>알림<svg class="ic chev" style="width:18px"><use href="#chev"/></svg></div>
         <div class="setrow" onclick="show('legal')"><svg class="ic"><use href="#check"/></svg>약관 · 개인정보 · 면책<svg class="ic chev" style="width:18px"><use href="#chev"/></svg></div>
+        <div class="setrow" onclick="logout()"><svg class="ic"><use href="#back"/></svg>로그아웃<svg class="ic chev" style="width:18px"><use href="#chev"/></svg></div>
         <div class="setrow danger" onclick="deleteAccount()"><svg class="ic" style="color:#c0392b"><use href="#x"/></svg>탈퇴 · 데이터 삭제</div>
       </div>
       <p class="pnote">미성년 정보는 최소 수집하며, 언제든 삭제할 수 있어요 (개인정보보호법 준수).</p>
@@ -654,6 +655,14 @@
       <p style="font-size:13px;line-height:1.7;color:var(--gray);margin-top:8px"><b>수집 항목</b> 소셜 로그인 식별자·닉네임·이메일(제공 동의 시)·연령대 / 아이: 별명·학교·학년·계열. <b>이용 목적</b> 회원 식별, 대입 분석·리포트 제공. <b>보유 기간</b> 탈퇴 시 지체 없이 파기(법령상 보존 제외).</p>
       <p style="font-size:13px;line-height:1.7;color:var(--gray)"><b>마케팅(선택 동의)</b> 동의 시 알림톡·이메일로 소식·혜택 안내, 언제든 철회 가능. <b>제3자 제공</b> 현재 없음 — 제휴가 생기면 제공받는 자·목적·항목·기간을 별도 고지하고 동의를 받습니다.</p>
       <p style="font-size:12px;line-height:1.6;color:var(--gray)">※ 정식 약관·개인정보 처리방침 문구는 법률 검토 후 게시됩니다.</p>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;line-height:1.85;color:var(--gray)">
+        <b style="color:var(--ink)">사업자 정보</b><br>
+        상호 렉슨주식회사 · 대표 윤태선<br>
+        사업자등록번호 255-81-02548 · <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=2558102548" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:underline">사업자정보확인</a><br>
+        통신판매업신고 2024-충북청주-075<br>
+        충북 청주시 청원구 향군로 155-1, 휴먼라이츠빌딩<br>
+        고객문의 info@daechipapa.com
+      </div>
       <div class="sect-h">자주 묻는 질문</div>
       <p style="font-size:13.5px;line-height:1.7;color:var(--ink)"><b>Q. 합격을 보장하나요?</b><br>아니요. 전략적 분석과 로드맵일 뿐, 합격을 보장하지 않습니다.</p>
       <p style="font-size:13.5px;line-height:1.7;color:var(--ink);margin-top:10px"><b>Q. 생기부를 대신 써주나요?</b><br>아니요. 분석만 합니다 (작성 대행 ❌).</p>
@@ -796,6 +805,7 @@
   function socialLogin(prov){ if(!reqOk()){alert('필수 약관에 동의해 주세요.');return;} location.href='/api/auth/'+prov+'/start?device='+encodeURIComponent(DEVICE_ID)+'&mk='+mkOptin(); }
   function trialStart(){ if(!reqOk()){alert('필수 약관에 동의해 주세요.');return;} boot().then(function(){show('onboard');}); }
   async function applyAuthConfig(){
+    document.querySelectorAll('.agree input[type=checkbox]').forEach(function(x){x.checked=false;});
     try{var r=await fetch('/api/auth/config');var d=await r.json();var en=d.providers||[];
       ['kakao','naver','google'].forEach(function(pp){var b=document.querySelector('#socialBtns .sbtn.'+pp);if(b)b.style.display=(en.indexOf(pp)>=0)?'':'none';});
     }catch(e){}
@@ -984,11 +994,17 @@
   function pay(a,i){payWithToss(a,i);}
 
   // ===== 탈퇴 · 데이터 삭제 (개인정보보호법) =====
+  function logout(){
+    if(!confirm('로그아웃할까요?'))return;
+    localStorage.removeItem('parentId');localStorage.removeItem('activeKidId');localStorage.removeItem('authProvider');
+    PARENT_ID=null;KIDS=[];ACTIVE=null;_chatInited=false;window._mgrKid=null;
+    renderActiveKid();show('landing');
+  }
   async function deleteAccount(){
     if(!confirm('정말 탈퇴할까요?\n모든 아이 프로필·대화·리포트가 영구 삭제되며 되돌릴 수 없어요.'))return;
     if(!confirm('마지막 확인입니다. 삭제를 진행할까요?'))return;
     try{
-      await fetch('/api/account',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({deviceId:DEVICE_ID})});
+      await fetch('/api/account',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({parentId:PARENT_ID,deviceId:DEVICE_ID})});
       localStorage.clear();
       alert('모든 데이터가 삭제되었습니다. 이용해 주셔서 감사합니다.');
       location.href='/app.html';
