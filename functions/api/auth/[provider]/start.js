@@ -1,4 +1,5 @@
-// GET /api/auth/{provider}/start?device=&mk= → provider 인증 페이지로 302
+// GET /api/auth/{provider}/start?device=&mk=&link= → provider 인증 페이지로 302
+// link= 가 있으면(로그인된 상태에서 계정연결) 콜백이 그 부모에 이 로그인을 붙인다.
 import { PROVIDERS, providerEnabled, redirectUri, signState } from "../../../../lib/oauth.js";
 import { json } from "../../../../lib/claude.js";
 
@@ -10,8 +11,9 @@ export async function onRequestGet({ params, request, env }) {
 
   const url = new URL(request.url);
   const device = url.searchParams.get("device") || "";
+  const link = url.searchParams.get("link") || "";
   const mk = url.searchParams.get("mk") === "1" ? 1 : 0;
-  const state = await signState(env, { n: name, device, mk });
+  const state = await signState(env, { n: name, device, mk, link });
 
   const auth = new URL(p.authorize);
   auth.searchParams.set("response_type", "code");

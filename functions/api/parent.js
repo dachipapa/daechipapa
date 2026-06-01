@@ -28,6 +28,9 @@ export async function onRequestGet({ request, env }) {
     const kids = await env.DB.prepare(
       "SELECT id,label,school,grade,track,cohort FROM kids WHERE parent_id=? ORDER BY created_at ASC"
     ).bind(parentId).all();
+    let logins = [];
+    try { const ids = await env.DB.prepare("SELECT provider FROM auth_identities WHERE parent_id=?").bind(parentId).all(); logins = (ids.results || []).map(r => r.provider); } catch (_) {}
+    p.logins = logins;
     return json({ parent: p, kids: kids.results || [] });
   } catch (e) { return json({ error: String(e.message || e) }, 500); }
 }
