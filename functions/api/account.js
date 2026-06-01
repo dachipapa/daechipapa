@@ -22,6 +22,9 @@ export async function onRequestDelete({ request, env }) {
     stmts.push(env.DB.prepare("DELETE FROM payments WHERE parent_id=?").bind(pid));
     stmts.push(env.DB.prepare("DELETE FROM parents WHERE id=?").bind(pid));
     await env.DB.batch(stmts);
+    // 계정연결 테이블 정리 (테이블 미존재 환경에서도 안전하게 best-effort)
+    try { await env.DB.prepare("DELETE FROM auth_identities WHERE parent_id=?").bind(pid).run(); } catch (_) {}
+    try { await env.DB.prepare("DELETE FROM device_links WHERE parent_id=?").bind(pid).run(); } catch (_) {}
     return json({ ok: true, deletedKids: kidIds.length });
   } catch (e) { return json({ error: String(e.message || e) }, 500); }
 }

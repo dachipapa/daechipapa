@@ -33,6 +33,8 @@ export async function onRequest({ request, env }) {
     stmts.push(env.DB.prepare("DELETE FROM payments WHERE parent_id=?").bind(parentId));
     stmts.push(env.DB.prepare("DELETE FROM parents WHERE id=?").bind(parentId));
     await env.DB.batch(stmts);
+    try { await env.DB.prepare("DELETE FROM auth_identities WHERE parent_id=?").bind(parentId).run(); } catch (_) {}
+    try { await env.DB.prepare("DELETE FROM device_links WHERE parent_id=?").bind(parentId).run(); } catch (_) {}
     return j({ ok: true, deleted: parentId, kids: kidIds.length });
   }
   return j({ error: "Method not allowed" }, 405);
