@@ -520,8 +520,6 @@
       </div>
       <div id="socialBtns" style="display:flex;flex-direction:column;gap:10px">
         <button class="sbtn kakao" disabled onclick="socialLogin('kakao')">카카오로 시작</button>
-        <button class="sbtn naver" disabled onclick="socialLogin('naver')">네이버로 시작</button>
-        <button class="sbtn google" disabled onclick="socialLogin('google')">Google로 시작</button>
       </div>
       <p style="font-size:12px;color:var(--gray);margin-top:14px;text-align:center;line-height:1.6">만 14세 미만은 보호자(부모님) 계정으로 함께 이용해 주세요.</p>
       <button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="trialStart()">로그인 없이 먼저 체험하기</button>
@@ -901,21 +899,12 @@
   }
   window.renderAccount=function(){
     var p=PARENT||{};
+    var labels={kakao:'카카오',naver:'네이버',google:'구글'};
     function esc2(x){return (x==null?'':String(x)).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
     function row(label,val){return '<div class="setrow" style="justify-content:space-between"><span style="color:var(--gray);font-weight:600">'+label+'</span><b style="color:var(--ink)">'+esc2(val||'—')+'</b></div>';}
     var el=document.getElementById('acctRows');
-    if(el)el.innerHTML=row('이름',p.name)+row('휴대전화',p.phone)+row('이메일',p.email);
-    var box=document.getElementById('acctLogins');
-    if(box){
-      var labels={kakao:'카카오',naver:'네이버',google:'구글'};
-      var logins=p.logins||(p.provider?[p.provider]:[]);
-      var provs=(AUTH_PROVIDERS&&AUTH_PROVIDERS.length)?AUTH_PROVIDERS:['kakao','naver','google'];
-      box.innerHTML='<div class="sect-h" style="margin-top:8px">로그인 연결</div>'+provs.map(function(pp){
-        var on=logins.indexOf(pp)>=0;
-        return '<div class="setrow" style="justify-content:space-between"><span style="font-weight:600">'+(labels[pp]||pp)+'</span>'+(on?'<b style="color:var(--blue)">연결됨</b>':'<button class="btn ghost sm" onclick="linkLogin(\''+pp+'\')">연결하기</button>')+'</div>';
-      }).join('')+'<p class="mut" style="font-size:11.5px;margin-top:8px;line-height:1.6">로그인을 연결하면 어느 걸로 들어와도 같은 계정·같은 아이로 이어져요.</p>';
-    }
-    if(!AUTH_PROVIDERS.length){fetch('/api/auth/config').then(function(r){return r.json();}).then(function(d){AUTH_PROVIDERS=d.providers||[];window.renderAccount();}).catch(function(){});}
+    if(el)el.innerHTML=row('이름',p.name)+row('휴대전화',p.phone)+row('이메일',p.email)+row('로그인',labels[p.provider]||(p.provider?p.provider:'기기 계정'));
+    var box=document.getElementById('acctLogins'); if(box)box.innerHTML='';
   };
   function authedName(){ return (PARENT&&PARENT.provider)?(PARENT.name||PARENT.nickname||'내 계정'):null; }
   window.updateAuthUI=function(){
