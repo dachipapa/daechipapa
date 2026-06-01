@@ -902,8 +902,10 @@
       }
     }
     if(h.indexOf('err=')>=0){history.replaceState(null,'',location.pathname+location.search);}
-    if(PARENT_ID){await loadParent();}
+    if(PARENT_ID){await loadParent(); if(localStorage.getItem('authProvider')){show((KIDS&&KIDS.length>0)?'dashboard':'onboard');}}
   }
+  // 로그인 상태에서 뒤로가기(bfcache 복원 포함) 시 랜딩 대신 앱으로 — 세션 유지
+  window.addEventListener('pageshow',function(e){ if(e.persisted && localStorage.getItem('authProvider')){ loadParent().then(function(){ show((KIDS&&KIDS.length>0)?'dashboard':'onboard'); }); } });
   function activeKidId(){return ACTIVE?ACTIVE.id:null;}
   function kidInfo(k){return (k.school||'학교')+(k.grade?' '+k.grade:'')+(k.track?' · '+k.track:'')+(k.cohort?' · '+k.cohort+' 코호트':'');}
   function renderActiveKid(){
