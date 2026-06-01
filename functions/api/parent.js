@@ -23,7 +23,7 @@ export async function onRequestGet({ request, env }) {
   try {
     const parentId = new URL(request.url).searchParams.get("parentId");
     if (!parentId) return json({ error: "parentId 필요" }, 400);
-    const p = await env.DB.prepare("SELECT id,nickname,source,status FROM parents WHERE id=?").bind(parentId).first();
+    const p = await env.DB.prepare("SELECT id,nickname,name,email,phone,provider,source,status FROM parents WHERE id=?").bind(parentId).first();
     if (!p) return json({ error: "부모 없음" }, 404);
     const kids = await env.DB.prepare(
       "SELECT id,label,school,grade,track,cohort FROM kids WHERE parent_id=? ORDER BY created_at ASC"
