@@ -334,6 +334,7 @@
   .pill.off{background:transparent;color:var(--gray)}
   .mdel{background:none;border:none;color:#c0392b;font-size:19px;cursor:pointer;padding:0 2px}
   .mwarn{font-size:12px;color:#c0392b;padding:0 6px 10px}
+  #genGo:disabled{opacity:.42;box-shadow:none;cursor:default}
 </style>
 </head>
 <body>
@@ -590,12 +591,12 @@
           <div class="cf"><svg class="ic"><use href="#route"/></svg>전형 지도</div>
           <div class="cf"><svg class="ic"><use href="#check"/></svg>전형 진단</div>
           <div class="cf"><svg class="ic"><use href="#user"/></svg>생기부 진단</div>
-          <button class="btn ghost sm" style="margin-top:14px;width:100%" onclick="generate('standard_dx')">단품 뽑기</button></div>
+          <button class="btn ghost sm" style="margin-top:14px;width:100%" onclick="askGenerate('standard_dx')">단품 뽑기</button></div>
         <div class="card hot"><span class="ctag">추천</span><div class="cn">마일스톤 — 종합</div><div class="ca">₩79,000</div>
           <div class="cf"><svg class="ic"><use href="#spark"/></svg>전부 합성 + 목표대학 매칭</div>
           <div class="cf"><svg class="ic"><use href="#route"/></svg>시점별 로드맵 + 시나리오</div>
           <div class="cf"><svg class="ic"><use href="#msg"/></svg>해설 Q&A 2주</div>
-          <button class="btn" style="margin-top:14px" onclick="generate('milestone')"><svg class="ic"><use href="#spark"/></svg>마일스톤 뽑기</button></div>
+          <button class="btn" style="margin-top:14px" onclick="askGenerate('milestone')"><svg class="ic"><use href="#spark"/></svg>마일스톤 뽑기</button></div>
       </div>
       <p class="pnote">결제는 토스로 한 번. 같은 아이의 시나리오 분기는 한 장 안에 포함돼요.</p>
     </div></div>
@@ -721,6 +722,17 @@
         <button class="sendb" onclick="mgrSend()"><svg class="ic" style="width:18px;height:18px"><use href="#send"/></svg></button>
       </div>
     </div></div>
+  </div>
+
+  <!-- 청약철회(환불 제한) 동의 모달 -->
+  <div class="consent" id="genConsent">
+    <div class="ccard">
+      <h3>리포트 생성 전 확인</h3>
+      <p style="text-align:left">이 리포트는 <b>생성 즉시 제공되는 디지털 콘텐츠</b>예요. 생성·열람 후에는 「전자상거래법」에 따라 <b>청약철회(환불)가 제한</b>됩니다. 생성 전이라면 7일 이내 환불할 수 있어요.</p>
+      <label style="display:flex;align-items:flex-start;gap:9px;text-align:left;font-size:13.5px;color:var(--ink);margin:2px 0 18px;cursor:pointer;line-height:1.5"><input type="checkbox" id="genAgree" style="margin-top:2px;width:17px;height:17px;flex:0 0 auto" onchange="document.getElementById('genGo').disabled=!this.checked"><span>위 내용을 확인했고, <b>생성에 동의</b>합니다.</span></label>
+      <button class="btn" id="genGo" disabled onclick="doGenerate()"><svg class="ic"><use href="#spark"/></svg>동의하고 생성</button>
+      <button class="ccancel" onclick="closeGen()">취소</button>
+    </div>
   </div>
 
   <!-- 학원 리스트 시트(모달) -->
@@ -971,6 +983,10 @@
 
   // ===== 리포트 =====
   var _genTimer=null;
+  var _pendKind=null;
+  window.askGenerate=function(kind){_pendKind=kind;var a=document.getElementById('genAgree');if(a)a.checked=false;var g=document.getElementById('genGo');if(g)g.disabled=true;var m=document.getElementById('genConsent');if(m)m.classList.add('open');};
+  window.closeGen=function(){var m=document.getElementById('genConsent');if(m)m.classList.remove('open');};
+  window.doGenerate=function(){var k=_pendKind;closeGen();if(k)generate(k);};
   async function generate(kind){
     kind=kind||'milestone';
     var kid=activeKidId();
