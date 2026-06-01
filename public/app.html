@@ -6,6 +6,18 @@
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
 <title>대치파파</title>
+<meta name="description" content="공개 입시 데이터 기반 AI 대입 분석. 우리 아이 입시, 데이터로 분석해요."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://app.daechipapa.com/"/>
+<meta property="og:site_name" content="대치파파"/>
+<meta property="og:title" content="대치파파 — 예측이 아니라, 분석입니다"/>
+<meta property="og:description" content="공개 입시 데이터 기반 AI 대입 분석. 우리 아이 입시, 데이터로 분석해요."/>
+<meta property="og:image" content="https://app.daechipapa.com/og-image.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://app.daechipapa.com/og-image.png"/>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js" async crossorigin="anonymous"></script>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#183367"/>
 <meta name="mobile-web-app-capable" content="yes"/>
@@ -153,6 +165,11 @@
   /* consent modal */
   .consent{position:fixed;inset:0;z-index:60;background:rgba(21,32,58,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:28px}
   .consent.open{display:flex}
+  .loadov{position:fixed;inset:0;z-index:200;background:rgba(251,250,246,.96);display:none;flex-direction:column;align-items:center;justify-content:center;gap:15px}
+  .loadov.on{display:flex}
+  .loadov .sp{width:44px;height:44px;border:4px solid rgba(24,51,103,.15);border-top-color:var(--blue);border-radius:50%;animation:lspin .8s linear infinite}
+  .loadov .lt{color:var(--blue);font-weight:700;font-size:15px}
+  @keyframes lspin{to{transform:rotate(360deg)}}
   .ccard{background:var(--bg);border-radius:24px;padding:30px 26px;text-align:center;max-width:320px;box-shadow:0 30px 60px -18px rgba(0,0,0,.55)}
   .ccard svg{width:50px;height:42px}
   .ccard h3{font-size:21px;font-weight:800;color:var(--blue);margin-top:8px;letter-spacing:-.03em}
@@ -350,6 +367,7 @@
 </style>
 </head>
 <body>
+<div class="loadov" id="loadov"><div class="sp"></div><div class="lt">잠시만요…</div></div>
 <div class="phone">
 
   <!-- ===== LANDING ===== -->
@@ -449,7 +467,7 @@
           <div class="card"><div class="cn">대화 상담 — 크레딧</div><div class="ca">₩4,900<small> 부터</small></div>
             <div class="cf"><svg class="ic"><use href="#msg"/></svg>필요할 때마다 충전</div>
             <div class="cf"><svg class="ic"><use href="#spark"/></svg>탈대치·자퇴·과목 선택 무엇이든</div></div>
-          <div class="card"><div class="cn">필요한 분야만 — 단품</div><div class="ca">₩29,000<small> / 한 장</small></div>
+          <div class="card"><div class="cn">필요한 분야만 — 브리핑</div><div class="ca">₩29,000<small> / 한 장</small></div>
             <div class="cf"><svg class="ic"><use href="#route"/></svg>전형 지도 — 제도·요강 분석</div>
             <div class="cf"><svg class="ic"><use href="#check"/></svg>전형 진단 — 수시·정시 적합도</div>
             <div class="cf"><svg class="ic"><use href="#user"/></svg>생기부 진단 — 세특·활동</div></div>
@@ -458,7 +476,7 @@
             <div class="cf"><svg class="ic"><use href="#spark"/></svg>목표대학 매칭 + 시점별 로드맵</div>
             <div class="cf"><svg class="ic"><use href="#msg"/></svg>해설 Q&A 2주 포함</div></div>
         </div>
-        <p class="pnote">단품 결제액은 마일스톤 업그레이드 시 차감. 결제는 뽑을 때 한 번, 한 건은 한 아이 기준.</p>
+        <p class="pnote">브리핑 결제액은 마일스톤 업그레이드 시 차감. 결제는 뽑을 때 한 번, 한 건은 한 아이 기준.</p>
       </div>
 
       <div class="sec gray" id="notsec">
@@ -550,7 +568,7 @@
     <div class="topbar"><button class="back" onclick="show('onboard')"><svg class="ic" style="width:24px;height:24px"><use href="#back"/></svg></button><div class="ttl" id="profileTitle">아이 프로필</div></div>
     <div class="body"><div class="form">
       <h2 id="profileH2">아이 한 명을<br>등록해요.</h2>
-      <p class="sub" id="profileSub">학교·학년·코호트가 분석의 기준이에요.</p>
+      <p class="sub" id="profileSub">학교·학년·입시 학년도가 분석의 기준이에요.</p>
       <div class="fld"><label id="profileNameLabel">별명</label><input id="profileNameInput" placeholder="예: 첫째, 지민이"/></div>
       <div class="fld"><label>학교</label><input id="profileSchoolInput" list="schoolList" autocomplete="off" oninput="schoolAuto(this.value)" placeholder="예: 대치고등학교"/><datalist id="schoolList"></datalist></div>
       <div class="fld"><label>학년</label>
@@ -573,7 +591,7 @@
       </div>
       <div class="quick">
         <div class="qc" onclick="show('chat')"><svg class="ic"><use href="#msg"/></svg><b>대화하기</b><span>무엇이든 물어보기</span></div>
-        <div class="qc" onclick="show('pick')"><svg class="ic"><use href="#route"/></svg><b>리포트 뽑기</b><span>마일스톤 / 단품</span></div>
+        <div class="qc" onclick="show('pick')"><svg class="ic"><use href="#route"/></svg><b>리포트 뽑기</b><span>마일스톤 / 브리핑</span></div>
       </div>
       <div class="qc" onclick="show('manager')" style="margin-top:12px;display:flex;align-items:center;gap:14px">
         <svg class="ic" style="width:26px;height:26px;flex:0 0 auto"><use href="#cal"/></svg>
@@ -607,11 +625,11 @@
     <div class="body"><div class="dash">
       <p class="lead" style="text-align:left;margin:0 0 18px">아이 한 명 기준으로 생성돼요. 필요한 분야만, 또는 전체를 한 번에.</p>
       <div class="cards">
-        <div class="card"><div class="cn">단품 · 분야별</div><div class="ca">₩29,000</div>
+        <div class="card"><div class="cn">브리핑 · 분야별</div><div class="ca">₩29,000</div>
           <div class="cf"><svg class="ic"><use href="#route"/></svg>전형 지도</div>
           <div class="cf"><svg class="ic"><use href="#check"/></svg>전형 진단</div>
           <div class="cf"><svg class="ic"><use href="#user"/></svg>생기부 진단</div>
-          <button class="btn ghost sm" style="margin-top:14px;width:100%" onclick="askGenerate('standard_dx')">단품 뽑기</button></div>
+          <button class="btn ghost sm" style="margin-top:14px;width:100%" onclick="askGenerate('standard_dx')">브리핑 뽑기</button></div>
         <div class="card hot"><span class="ctag">추천</span><div class="cn">마일스톤 — 종합</div><div class="ca">₩79,000</div>
           <div class="cf"><svg class="ic"><use href="#spark"/></svg>전부 합성 + 목표대학 매칭</div>
           <div class="cf"><svg class="ic"><use href="#route"/></svg>시점별 로드맵 + 시나리오</div>
@@ -646,9 +664,9 @@
       <div class="payopt"><div class="pi"><b>10 크레딧</b><span>가볍게</span></div><button class="toss" onclick="pay(4900,'10 크레딧')">토스 ₩4,900</button></div>
       <div class="payopt"><div class="pi"><b>30 크레딧</b><span>넉넉하게</span></div><button class="toss" onclick="pay(12900,'30 크레딧')">토스 ₩12,900</button></div>
       <div class="sect-h">리포트</div>
-      <div class="payopt"><div class="pi"><b>단품 리포트</b><span>분야별 한 장</span></div><button class="toss" onclick="pay(29000,'단품')">토스 ₩29,000</button></div>
+      <div class="payopt"><div class="pi"><b>브리핑 리포트</b><span>분야별 한 장</span></div><button class="toss" onclick="pay(29000,'브리핑')">토스 ₩29,000</button></div>
       <div class="payopt"><div class="pi"><b>마일스톤 종합</b><span>전체 그림</span></div><button class="toss" onclick="pay(79000,'마일스톤')">토스 ₩79,000</button></div>
-      <p class="pnote">결제는 토스로 안전하게. 단품 결제액은 마일스톤 업그레이드 시 차감돼요.</p>
+      <p class="pnote">결제는 토스로 안전하게. 브리핑 결제액은 마일스톤 업그레이드 시 차감돼요.</p>
     </div></div>
   </div>
 
@@ -849,7 +867,8 @@
     if(id==='auth'){applyAuthConfig();}
   }
   function scrollSec(id){var e=document.getElementById(id);if(e)e.scrollIntoView({behavior:'smooth'});}
-  function openConsent(){document.getElementById('consent').classList.add('open');}
+  function _toBody(id){var e=document.getElementById(id);if(e&&e.parentElement!==document.body)document.body.appendChild(e);return e;}
+  function openConsent(){_toBody('consent').classList.add('open');}
   function closeConsent(){document.getElementById('consent').classList.remove('open');}
   function openMenu(){document.getElementById('menu').classList.add('open');}
   function closeMenu(){document.getElementById('menu').classList.remove('open');}
@@ -880,7 +899,24 @@
   }
   function mkOptin(){var m=document.getElementById('agMk');return m&&m.checked?1:0;}
   function reqOk(){var reqs=[].slice.call(document.querySelectorAll('#auth .agReq'));return reqs.length>0&&reqs.every(function(x){return x.checked;});}
-  function socialLogin(prov){ if(!reqOk()){alert('필수 약관에 동의해 주세요.');return;} localStorage.setItem('agreedTerms','1'); location.href='/api/auth/'+prov+'/start?device='+encodeURIComponent(DEVICE_ID)+'&mk='+mkOptin(); }
+  var KAKAO_JS_KEY='0991f5ad01c457dd83cbe648bd5c2cb1';
+  async function socialLogin(prov){
+    if(!reqOk()){alert('필수 약관에 동의해 주세요.');return;}
+    localStorage.setItem('agreedTerms','1');
+    showLoad('카카오 로그인 중…');
+    if(prov==='kakao' && window.Kakao){
+      try{
+        if(!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
+        var rs=await fetch('/api/auth/kakao/start?mode=json&device='+encodeURIComponent(DEVICE_ID)+'&mk='+mkOptin(),{credentials:'same-origin'});
+        var d=await rs.json();
+        if(d&&d.state&&Kakao.Auth&&Kakao.Auth.authorize){
+          Kakao.Auth.authorize({redirectUri:d.redirectUri,state:d.state,scope:d.scope||'profile_nickname'});
+          return;
+        }
+      }catch(e){}
+    }
+    location.href='/api/auth/'+prov+'/start?device='+encodeURIComponent(DEVICE_ID)+'&mk='+mkOptin();
+  }
   function linkLogin(prov){ if(!PARENT_ID){show('auth');return;} location.href='/api/auth/'+prov+'/start?device='+encodeURIComponent(DEVICE_ID)+'&mk='+mkOptin()+'&link='+encodeURIComponent(PARENT_ID); }
   function trialStart(){ if(!reqOk()){alert('필수 약관에 동의해 주세요.');return;} localStorage.setItem('agreedTerms','1'); boot().then(function(){show('onboard');}); }
   async function applyAuthConfig(){
@@ -915,13 +951,17 @@
       else{a.textContent='로그인';a.onclick=function(){if(m)closeMenu();show('auth');return false;};}
     });
   };
+  function showLoad(t){var o=document.getElementById('loadov');if(o){if(t){var l=o.querySelector('.lt');if(l)l.textContent=t;}o.classList.add('on');}}
+  function hideLoad(){var o=document.getElementById('loadov');if(o)o.classList.remove('on');}
   async function initSession(){
     var h=location.hash||'';
     if(h.charAt(0)==='#'&&h.indexOf('p=')>=0){
       var pr={};h.slice(1).split('&').forEach(function(kv){var a=kv.split('=');pr[a[0]]=decodeURIComponent(a[1]||'');});
       if(pr.p){PARENT_ID=pr.p;localStorage.setItem('parentId',PARENT_ID);if(pr.prov)localStorage.setItem('authProvider',pr.prov);
         history.replaceState(null,'',location.pathname+location.search);
+        showLoad('로그인 중…');
         await loadParent();
+        hideLoad();
         show(((parseInt(pr.kids,10)||KIDS.length)>0)?'dashboard':'onboard');
         return;
       }
@@ -932,7 +972,8 @@
   // 로그인 상태에서 뒤로가기(bfcache 복원 포함) 시 랜딩 대신 앱으로 — 세션 유지
   window.addEventListener('pageshow',function(e){ if(e.persisted && PARENT_ID){ show('dashboard'); loadParent().then(function(){ show((KIDS&&KIDS.length>0)?'dashboard':'onboard'); }); } });
   function activeKidId(){return ACTIVE?ACTIVE.id:null;}
-  function kidInfo(k){var y=(k.cohort&&/^\d{4}$/.test(String(k.cohort)))?(' · 입시 '+k.cohort):'';return (k.school||'학교')+(k.grade?' '+k.grade:'')+((k.track&&k.track!==k.grade)?' · '+k.track:'')+y;}
+  function gradeYear(g){var Y=new Date().getFullYear();var m={'중3':Y+4,'고1':Y+3,'고2':Y+2,'고3·N수':Y+1};return m[g]||0;}
+  function kidInfo(k){var hy=gradeYear(k.grade);var y=hy?(' · '+hy+'학년도'):'';return (k.school||'학교')+(k.grade?' '+k.grade:'')+((k.track&&k.track!==k.grade)?' · '+k.track:'')+y;}
   function renderActiveKid(){
     if(!ACTIVE){setText('greeting_name','우리 아이의 마일스톤을 그려볼까요?');setText('kid_who','프로필을 만들어 시작하세요');setText('mgr_chip','우리 아이');return;}
     setText('greeting_name',ACTIVE.label+'의 마일스톤을 그려볼까요?');
@@ -946,12 +987,12 @@
     var s=_userType==='student',e;
     if((e=document.getElementById('profileTitle')))e.textContent=s?'내 프로필':'아이 프로필';
     if((e=document.getElementById('profileH2')))e.innerHTML=s?'내 정보를<br>등록해요.':'아이 한 명을<br>등록해요.';
-    if((e=document.getElementById('profileSub')))e.textContent=s?'내 학교·학년·계열이 분석의 기준이에요.':'학교·학년·코호트가 분석의 기준이에요.';
+    if((e=document.getElementById('profileSub')))e.textContent=s?'내 학교·학년·계열이 분석의 기준이에요.':'학교·학년·입시 학년도가 분석의 기준이에요.';
     if((e=document.getElementById('profileNameLabel')))e.textContent=s?'이름/별명':'별명';
     if((e=document.getElementById('profileNameInput')))e.placeholder=s?'예: 내 이름, 닉네임':'예: 첫째, 지민이';
   }
   async function saveProfile(){
-    var cohortMap={'중3':2029,'고1':2028,'고2':2027,'고3·N수':2026};
+    var _Y=new Date().getFullYear();
     var _cg=document.querySelectorAll('#profile .chips');
     var gEl=_cg[0]&&_cg[0].querySelector('.chip.on');
     var tEl=_cg[1]&&_cg[1].querySelector('.chip.on');
@@ -962,7 +1003,7 @@
     if(!PARENT_ID){await boot();}
     var btn=document.querySelector('#profile .btn'); if(btn){btn.disabled=true;btn.textContent='저장 중…';}
     try{
-      var r=await fetch('/api/kids',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({parentId:PARENT_ID,label:label,school:school,grade:grade,track:track,cohort:cohortMap[grade]||2027})});
+      var r=await fetch('/api/kids',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({parentId:PARENT_ID,label:label,school:school,grade:grade,track:track,cohort:gradeYear(grade)||(_Y+2)})});
       var d=await r.json();
       if(!r.ok){alert(d.error||'저장 실패');return;}
       if(!d.kid){alert('저장에 문제가 있었어요. 잠시 후 다시 시도해 주세요.');return;}
@@ -1022,7 +1063,7 @@
   // ===== 리포트 =====
   var _genTimer=null;
   var _pendKind=null;
-  window.askGenerate=function(kind){_pendKind=kind;var a=document.getElementById('genAgree');if(a)a.checked=false;var g=document.getElementById('genGo');if(g)g.disabled=true;var m=document.getElementById('genConsent');if(m)m.classList.add('open');};
+  window.askGenerate=function(kind){_pendKind=kind;var a=document.getElementById('genAgree');if(a)a.checked=false;var g=document.getElementById('genGo');if(g)g.disabled=true;var m=_toBody('genConsent');if(m)m.classList.add('open');};
   window.closeGen=function(){var m=document.getElementById('genConsent');if(m)m.classList.remove('open');};
   window.doGenerate=function(){var k=_pendKind;closeGen();if(k)generate(k);};
   async function generate(kind){
@@ -1058,7 +1099,7 @@
   }
 
   // ===== 라이브러리 / 대시보드 리포트 =====
-  function repName(kind){return kind==='milestone'?'마일스톤 — 종합':(kind==='standard_dx'?'전형 진단 — 단품':(kind==='standard_map'?'전형 지도 — 단품':(kind==='standard_school'?'학교 분석 — 단품':'분석 — 단품')));}
+  function repName(kind){return kind==='milestone'?'마일스톤 — 종합':(kind==='standard_dx'?'전형 진단 — 브리핑':(kind==='standard_map'?'전형 지도 — 브리핑':(kind==='standard_school'?'학교 분석 — 브리핑':'분석 — 브리핑')));}
   async function fetchReports(){var kid=activeKidId();if(!kid)return[];try{var r=await fetch('/api/reports?kidId='+encodeURIComponent(kid));var d=await r.json();return d.reports||[];}catch(e){return[];}}
   async function loadLibrary(){
     var el=document.getElementById('libList');if(!el)return;
@@ -1171,7 +1212,7 @@
     var l=document.getElementById('mgrList');
     if(l){var lh='';if(on.length){lh+='<div class="sect-h">이번 주 일정</div>';on.forEach(function(C){lh+='<div class="acarow"><span class="acadot on"></span><div style="flex:1"><b>'+C.subj+'</b> <span style="font-size:11.5px;color:var(--gray)">'+(C.aca?'· '+C.aca:'')+(C.tea?' · '+C.tea+'쌤':'')+'</span></div><span>'+C.days.join('·')+' '+C.s+'–'+C.e+'</span></div>';});}lh+='<button class="listopen" onclick="openSheet()"><svg class="ic" style="width:18px;height:18px;color:var(--blue)"><use href="#cal"/></svg>학원 리스트 관리<span class="cnt">'+CLS.length+'개'+(cand.length?' · 후보 '+cand.length:'')+'</span></button>';if(CLS.length===0)lh='<p style="font-size:13px;color:var(--gray)">아직 학원이 없어요. 아래 대화로 넣어보세요.</p>'+lh;l.innerHTML=lh;if(document.getElementById('mgrSheet')&&document.getElementById('mgrSheet').classList.contains('open'))renderSheet();}
   }
-  window.openSheet=function(){var s=document.getElementById('mgrSheet');if(s){renderSheet();s.classList.add('open');}};
+  window.openSheet=function(){var s=_toBody('mgrSheet');if(s){renderSheet();s.classList.add('open');}};
   window.closeSheet=function(){var s=document.getElementById('mgrSheet');if(s)s.classList.remove('open');};
   function renderSheet(){
     var b=document.getElementById('sheetBody'),c=document.getElementById('sheetCount');

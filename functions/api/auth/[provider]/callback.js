@@ -16,7 +16,7 @@ export async function onRequestGet({ params, request, env }) {
     const state = url.searchParams.get("state");
     if (!code || !state) return back(env, "err=nocode");
     const ck = (request.headers.get("Cookie") || "").match(/dp_oas=([^;]+)/);
-    if (!ck || ck[1] !== state) return back(env, "err=state");
+    if (ck && ck[1] !== state) return back(env, "err=state");
     const st = await verifyState(env, state);
     if (!st || st.n !== name) return back(env, "err=state");
 
