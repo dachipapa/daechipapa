@@ -137,6 +137,18 @@
   .about-wrap p{font-size:15.5px;line-height:1.75;color:var(--ink);margin-top:16px}
   .about-wrap .sig{margin-top:20px;font-size:15px;font-weight:800;color:var(--solar)}
 
+  /* 소셜 로그인 · 동의 게이트 */
+  .agree{display:flex;flex-direction:column;gap:9px;margin:18px 0;padding:14px 16px;background:var(--bg2);border-radius:14px}
+  .agree .ag{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink);cursor:pointer}
+  .agree .ag.all{border-bottom:1px solid var(--line);padding-bottom:11px;margin-bottom:2px;font-size:14.5px}
+  .agree .ag input{width:18px;height:18px;accent-color:var(--blue);flex:none}
+  .agree .ag a{color:var(--blue);text-decoration:underline}
+  .sbtn{display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:13px;font-family:inherit;font-weight:800;font-size:15px;padding:15px;cursor:pointer;transition:filter .15s,opacity .15s}
+  .sbtn:disabled{opacity:.4;cursor:not-allowed}
+  .sbtn:not(:disabled):active{filter:brightness(.95)}
+  .sbtn.kakao{background:#FEE500;color:#181600}
+  .sbtn.naver{background:#03C75A;color:#fff}
+  .sbtn.google{background:#fff;color:#1f2430;border:1px solid #dadce0}
   /* consent modal */
   .consent{position:absolute;inset:0;z-index:60;background:rgba(21,32,58,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:28px}
   .consent.open{display:flex}
@@ -451,11 +463,22 @@
   <div class="screen" id="auth">
     <div class="topbar"><button class="back" onclick="show('landing')"><svg class="ic" style="width:24px;height:24px"><use href="#back"/></svg></button><div class="ttl">시작하기</div></div>
     <div class="body"><div class="form">
-      <h2>부모님 계정으로<br>시작해요.</h2>
-      <div class="fld"><label>이메일 또는 휴대폰</label><input placeholder="parent@example.com"/></div>
-      <div class="fld"><label>비밀번호</label><input type="password" placeholder="••••••••"/></div>
-      <button class="btn" onclick="show('onboard')">계속하기</button>
-      <p class="pnote" style="text-align:center">카카오·네이버로 간편 시작도 가능 (연결 지점)</p>
+      <h2>간편하게<br>시작해요.</h2>
+      <p class="sub" style="margin-top:8px">로그인하면 분석·리포트가 안전하게 보관돼요.</p>
+      <div class="agree">
+        <label class="ag all"><input type="checkbox" id="agAll" onclick="agreeAll(this)"><span><b>전체 동의</b> (선택 포함)</span></label>
+        <label class="ag"><input type="checkbox" class="agReq" onclick="agreeSync()"><span>(필수) <a href="#" onclick="show('legal');return false">이용약관</a> 동의</span></label>
+        <label class="ag"><input type="checkbox" class="agReq" onclick="agreeSync()"><span>(필수) <a href="#" onclick="show('legal');return false">개인정보 수집·이용</a> 동의</span></label>
+        <label class="ag"><input type="checkbox" class="agReq" id="agAge" onclick="agreeSync()"><span>(필수) 만 14세 이상입니다</span></label>
+        <label class="ag"><input type="checkbox" id="agMk" onclick="agreeSync()"><span>(선택) 마케팅 정보 수신 동의</span></label>
+      </div>
+      <div id="socialBtns" style="display:flex;flex-direction:column;gap:10px">
+        <button class="sbtn kakao" disabled onclick="socialLogin('kakao')">카카오로 시작</button>
+        <button class="sbtn naver" disabled onclick="socialLogin('naver')">네이버로 시작</button>
+        <button class="sbtn google" disabled onclick="socialLogin('google')">Google로 시작</button>
+      </div>
+      <p style="font-size:12px;color:var(--gray);margin-top:14px;text-align:center;line-height:1.6">만 14세 미만은 보호자(부모님) 계정으로 함께 이용해 주세요.</p>
+      <button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="trialStart()">로그인 없이 먼저 체험하기</button>
     </div></div>
   </div>
 
@@ -628,6 +651,9 @@
       <p style="font-size:13.5px;line-height:1.7;color:var(--ink)">대치파파는 공개된 모집요강·전형 자료를 바탕으로 한 <b>참고용 분석</b>을 제공합니다. 합격을 예측·보장하지 않으며, 최종 지원 결정 전 각 대학의 모집요강을 반드시 확인하세요.</p>
       <div class="sect-h">개인정보</div>
       <p style="font-size:13.5px;line-height:1.7;color:var(--ink)">학생 실명은 수집하지 않습니다. 계정은 부모님 정보로만 운영되며, 미성년 관련 정보는 최소한으로 수집하고 언제든 삭제할 수 있습니다 (개인정보보호법 준수).</p>
+      <p style="font-size:13px;line-height:1.7;color:var(--gray);margin-top:8px"><b>수집 항목</b> 소셜 로그인 식별자·닉네임·이메일(제공 동의 시)·연령대 / 아이: 별명·학교·학년·계열. <b>이용 목적</b> 회원 식별, 대입 분석·리포트 제공. <b>보유 기간</b> 탈퇴 시 지체 없이 파기(법령상 보존 제외).</p>
+      <p style="font-size:13px;line-height:1.7;color:var(--gray)"><b>마케팅(선택 동의)</b> 동의 시 알림톡·이메일로 소식·혜택 안내, 언제든 철회 가능. <b>제3자 제공</b> 현재 없음 — 제휴가 생기면 제공받는 자·목적·항목·기간을 별도 고지하고 동의를 받습니다.</p>
+      <p style="font-size:12px;line-height:1.6;color:var(--gray)">※ 정식 약관·개인정보 처리방침 문구는 법률 검토 후 게시됩니다.</p>
       <div class="sect-h">자주 묻는 질문</div>
       <p style="font-size:13.5px;line-height:1.7;color:var(--ink)"><b>Q. 합격을 보장하나요?</b><br>아니요. 전략적 분석과 로드맵일 뿐, 합격을 보장하지 않습니다.</p>
       <p style="font-size:13.5px;line-height:1.7;color:var(--ink);margin-top:10px"><b>Q. 생기부를 대신 써주나요?</b><br>아니요. 분석만 합니다 (작성 대행 ❌).</p>
@@ -733,6 +759,7 @@
     if(id==='credits'){loadCredits();}
     if(id==='chat'){initChat();}
     if(id==='dashboard'){loadDashReports();}
+    if(id==='auth'){applyAuthConfig();}
   }
   function scrollSec(id){var e=document.getElementById(id);if(e)e.scrollIntoView({behavior:'smooth'});}
   function openConsent(){document.getElementById('consent').classList.add('open');}
@@ -754,6 +781,45 @@
       if(ACTIVE)localStorage.setItem('activeKidId',ACTIVE.id);
       renderActiveKid();
     }catch(e){/* 오프라인이어도 앱 자체는 뜸 */}
+  }
+  // ===== 동의 게이트 + 소셜 로그인 =====
+  function agreeAll(cb){var on=cb.checked;document.querySelectorAll('.agree input[type=checkbox]').forEach(function(x){x.checked=on;});agreeSync();}
+  function agreeSync(){
+    var reqs=[].slice.call(document.querySelectorAll('#auth .agReq'));
+    var ok=reqs.length>0&&reqs.every(function(x){return x.checked;});
+    document.querySelectorAll('#socialBtns .sbtn').forEach(function(b){b.disabled=!ok;});
+    var all=[].slice.call(document.querySelectorAll('.agree input[type=checkbox]')).filter(function(x){return x.id!=='agAll';});
+    var a=document.getElementById('agAll'); if(a)a.checked=all.length>0&&all.every(function(x){return x.checked;});
+  }
+  function mkOptin(){var m=document.getElementById('agMk');return m&&m.checked?1:0;}
+  function reqOk(){var reqs=[].slice.call(document.querySelectorAll('#auth .agReq'));return reqs.length>0&&reqs.every(function(x){return x.checked;});}
+  function socialLogin(prov){ if(!reqOk()){alert('필수 약관에 동의해 주세요.');return;} location.href='/api/auth/'+prov+'/start?device='+encodeURIComponent(DEVICE_ID)+'&mk='+mkOptin(); }
+  function trialStart(){ if(!reqOk()){alert('필수 약관에 동의해 주세요.');return;} boot().then(function(){show('onboard');}); }
+  async function applyAuthConfig(){
+    try{var r=await fetch('/api/auth/config');var d=await r.json();var en=d.providers||[];
+      ['kakao','naver','google'].forEach(function(pp){var b=document.querySelector('#socialBtns .sbtn.'+pp);if(b)b.style.display=(en.indexOf(pp)>=0)?'':'none';});
+    }catch(e){}
+    agreeSync();
+  }
+  async function loadParent(){
+    if(!PARENT_ID)return;
+    try{var r=await fetch('/api/parent?parentId='+encodeURIComponent(PARENT_ID));var d=await r.json();
+      if(d&&d.parent){KIDS=d.kids||[];var saved=localStorage.getItem('activeKidId');ACTIVE=KIDS.filter(function(k){return k.id===saved;})[0]||KIDS[0]||null;if(ACTIVE)localStorage.setItem('activeKidId',ACTIVE.id);renderActiveKid();}
+    }catch(e){}
+  }
+  async function initSession(){
+    var h=location.hash||'';
+    if(h.charAt(0)==='#'&&h.indexOf('p=')>=0){
+      var pr={};h.slice(1).split('&').forEach(function(kv){var a=kv.split('=');pr[a[0]]=decodeURIComponent(a[1]||'');});
+      if(pr.p){PARENT_ID=pr.p;localStorage.setItem('parentId',PARENT_ID);if(pr.prov)localStorage.setItem('authProvider',pr.prov);
+        history.replaceState(null,'',location.pathname+location.search);
+        await loadParent();
+        show(((parseInt(pr.kids,10)||KIDS.length)>0)?'dashboard':'onboard');
+        return;
+      }
+    }
+    if(h.indexOf('err=')>=0){history.replaceState(null,'',location.pathname+location.search);}
+    if(PARENT_ID){await loadParent();}
   }
   function activeKidId(){return ACTIVE?ACTIVE.id:null;}
   function kidInfo(k){return (k.school||'학교')+(k.grade?' '+k.grade:'')+(k.track?' · '+k.track:'')+(k.cohort?' · '+k.cohort+' 코호트':'');}
@@ -938,7 +1004,7 @@
 
   // ===== 시작 =====
   updateProfileLabels();
-  boot();
+  initSession();
 </script>
 <script>
 (function(){
